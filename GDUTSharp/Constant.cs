@@ -11,17 +11,15 @@
         // 本科生获取学期链接
         public const string UNDER_CLAZZ_TERM = "https://jxfw.gdut.edu.cn/xsksap!ksapList.action";
 
-        public const string UNDER_REFER = "https://jxfw.gdut.edu.cn/";
-
         public const string UNDER_CLAZZ = "https://jxfw.gdut.edu.cn/xsgrkbcx!getDataList.action";
         
         // 本科生考试安排
         public const string UNDER_EXAM = "https://jxfw.gdut.edu.cn/xsksap!getDataList.action";
 
         // 本科生获得成绩接口
-        public const string UNDER_EXAME_SCORE = "https://jxfw.gdut.edu.cn/xskccjxx!getDataList.action";
+        public const string UNDER_EXAM_SCORE = "https://jxfw.gdut.edu.cn/xskccjxx!getDataList.action";
 
-        // 本科生登录链接
+        // 本科生教学服务系统登录链接
         public const string UNDER_GRADUATE_LOGIN = "https://jxfw.gdut.edu.cn/new/ssoLogin";
 
         // 本科生选课列表
@@ -29,9 +27,6 @@
 
         #endregion
 
-        public const string CHECK_BLOCK_URL = "https://authserver.gdut.edu.cn/authserver/checkNeedCaptcha.htl";
-
-        
         // 研究生登录链接
         public const string GRADUATE_EHALL_LOGIN = "https://authserver.gdut.edu.cn/authserver/login?service=https://yjsxt.gdut.edu.cn/gsapp/sys/yjsemaphome/portal/index.do";
 

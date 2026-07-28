@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Json;
@@ -21,11 +20,26 @@ namespace GDUTSharp.Services
         private readonly ISecurityService _security = security;
         private Role? _role = null;
 
+        private async Task<HttpResponseMessage> Post(Dictionary<string, string> content, string url, string referer)
+        {
+            using var c = new FormUrlEncodedContent(content);
+            using var request = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = c
+            };
+            request.Headers.Referrer = new(referer);
+            return await _client.SendAsync(request);
+        }
+
         public bool Login(LoginInfo loginInfo)
         {
             HttpResponseMessage? response = null;
             try
             {
+                if (loginInfo.Role != Role.UNDER_GRADUATE)
+                {
+                    throw new NotSupportedException("不支持除本科生以外身份的操作");
+                }
                 using var request = new HttpRequestMessage(HttpMethod.Get, Constant.AUTHSERVER_LOGIN_URL);
                 string html = _client.SendAsync(request).Result.Content.ReadAsStringAsync().Result;
                 var doc = new HtmlDocument();
@@ -50,40 +64,23 @@ namespace GDUTSharp.Services
                 formData["username"] = loginInfo.UserName;
                 formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
 
-                using var postRequest = new HttpRequestMessage(HttpMethod.Post, Constant.AUTHSERVER_LOGIN_URL)
-                {
-                    Content = new FormUrlEncodedContent(formData)
-                };
-                response = _client.SendAsync(postRequest).Result;
+                response = this.Post(formData, Constant.AUTHSERVER_LOGIN_URL, Constant.AUTHSERVER_LOGIN_URL).Result;
 
-                int maxRedirects = 5;
-                int redirectCount = 0;
-                bool isRedirect = response.StatusCode == HttpStatusCode.MovedPermanently
-                    || response.StatusCode == HttpStatusCode.Redirect
-                    || response.StatusCode == HttpStatusCode.SeeOther
-                    || response.StatusCode == HttpStatusCode.TemporaryRedirect
-                    || response.StatusCode == HttpStatusCode.PermanentRedirect;
-                while (isRedirect && redirectCount < maxRedirects)
+                for (int i = 0; i < 5; i++)
                 {
+                    if (response.StatusCode != HttpStatusCode.Redirect && response.StatusCode != HttpStatusCode.MovedPermanently)
+                        break;
                     string? location = response.Headers.Location?.AbsoluteUri;
                     if (string.IsNullOrEmpty(location))
                         break;
-
-                    redirectCount++;
-                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", redirectCount, location);
+                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i, location);
                     response.Dispose();
-                    var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
-                    response = _client.SendAsync(redirectRequest).Result;
+                    response = _client.SendAsync(new HttpRequestMessage(HttpMethod.Get, location)).Result;
                 }
-                if (response.StatusCode == HttpStatusCode.Found)
-                {
-                    _role = loginInfo.Role;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+
+                var result = response.StatusCode == HttpStatusCode.Found;
+                _role = result ? loginInfo.Role : null;
+                return result;
             }
             catch (Exception e)
             {
@@ -109,30 +106,19 @@ namespace GDUTSharp.Services
                 {
                     url = Constant.AUTHSERVER_AUTH_Prefix + url;
                 }
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                string html = _client.SendAsync(request).Result.Content.ReadAsStringAsync().Result;
-
                 using var postRequest = new HttpRequestMessage(HttpMethod.Post, url);
                 response = _client.SendAsync(postRequest).Result;
 
-                int maxRedirects = 5;
-                int redirectCount = 0;
-                bool isRedirect = response.StatusCode == HttpStatusCode.MovedPermanently
-                    || response.StatusCode == HttpStatusCode.Redirect
-                    || response.StatusCode == HttpStatusCode.SeeOther
-                    || response.StatusCode == HttpStatusCode.TemporaryRedirect
-                    || response.StatusCode == HttpStatusCode.PermanentRedirect;
-                while (isRedirect && redirectCount < maxRedirects)
+                for (int i = 0; i < 5; i++)
                 {
+                    if (response.StatusCode != HttpStatusCode.Redirect)
+                        break;
                     string? location = response.Headers.Location?.AbsoluteUri;
                     if (string.IsNullOrEmpty(location))
                         break;
-
-                    redirectCount++;
-                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", redirectCount, location);
+                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i, location);
                     response.Dispose();
-                    var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
-                    response = _client.SendAsync(redirectRequest).Result;
+                    response = _client.SendAsync(new HttpRequestMessage(HttpMethod.Get, location)).Result;
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -146,10 +132,7 @@ namespace GDUTSharp.Services
                     reader.ReadLine();  // skip
                     return reader.ReadLine()?.StartsWith("<!-- 移动端 -->") == false;
                 }
-                else
-                {
-                    return false;
-                }
+                else return false;
             }
             catch (Exception e)
             {
@@ -171,7 +154,7 @@ namespace GDUTSharp.Services
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
                 using var request = new HttpRequestMessage(HttpMethod.Post, Constant.UNDER_CLAZZ_TERM);
-                request.Headers.Referrer = new(Constant.UNDER_REFER);
+                request.Headers.Referrer = new(Constant.UNDER_CLAZZ_TERM);
                 string content = _client.SendAsync(request).Result.Content.ReadAsStringAsync().Result;
                 int index = content.IndexOf("selected");
                 return content[(index - 2 - "202502".Length)..(index - 2)];
@@ -203,14 +186,8 @@ namespace GDUTSharp.Services
                     { "sort", "zc,xq,jcdm" },
                     { "order", "asc" },
                 };
-                using var content = new FormUrlEncodedContent(temp);
-                using var request = new HttpRequestMessage(HttpMethod.Post, Constant.UNDER_CLAZZ)
-                {
-                    Content = content
-                };
-                request.Headers.Referrer = new(Constant.UNDER_REFER);
-                using HttpResponseMessage response = _client.SendAsync(request).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context().LessonCollection).Result;
+                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_CLAZZ, Constant.UNDER_CLAZZ).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonCollection).Result;
                 return result;
             }
             catch (Exception e)
@@ -229,21 +206,15 @@ namespace GDUTSharp.Services
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
                 var temp = new Dictionary<string, string>
-                    {
-                        { "xnxqdm", term },
-                        { "page", "1" },
-                        { "rows", "200" },
-                        { "sort", "zc,xq,jcdm2" },
-                        { "order", "asc" },
-                    };
-                using var content = new FormUrlEncodedContent(temp);
-                using var request = new HttpRequestMessage(HttpMethod.Post, Constant.UNDER_EXAM)
                 {
-                    Content = content
+                    { "xnxqdm", term },
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "sort", "zc,xq,jcdm2" },
+                    { "order", "asc" },
                 };
-                request.Headers.Referrer = new(Constant.UNDER_REFER);
-                using HttpResponseMessage response = _client.SendAsync(request).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context().ExamCollection).Result;
+                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_EXAM, Constant.UNDER_EXAM).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamCollection).Result;
                 return result;
             }
             catch (Exception e)
@@ -255,30 +226,49 @@ namespace GDUTSharp.Services
 
         public LessonScoreCollection? GetScore(string term)
         {
+            HttpResponseMessage response;
             try
             {
                 if (_role != Role.UNDER_GRADUATE)
                 {
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
-                // TODO: 处理 term == "" 时劳动教育成绩不显示的问题
                 var temp = new Dictionary<string, string>
-                    {
-                        { "xnxqdm", term },
-                        { "jhlxdm", "" },
-                        { "page", "1" },
-                        { "rows", "200" },
-                        { "sort", "xnxqdm" },
-                        { "order", "asc" },
-                    };
-                using var content = new FormUrlEncodedContent(temp);
-                using var request = new HttpRequestMessage(HttpMethod.Post, Constant.UNDER_EXAME_SCORE)
                 {
-                    Content = content
+                    { "xnxqdm", term },
+                    { "jhlxdm", "" },
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "sort", "xnxqdm" },
+                    { "order", "asc" },
                 };
-                request.Headers.Referrer = new(Constant.UNDER_REFER);
-                using HttpResponseMessage response = _client.SendAsync(request).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context().LessonScoreCollection).Result;
+                response = this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonScoreCollection).Result;
+                response.Dispose();
+                if (result != null && term == "")
+                {
+                    HashSet<string> terms = [];
+                    foreach (var item in result.Items)
+                        terms.Add(item.Term);
+                    foreach (var item in terms)
+                    {
+                        response = this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE).Result;
+                        var tempResult = response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonScoreCollection).Result;
+                        response.Dispose();
+                        if (tempResult != null)
+                        {
+                            foreach (var scoreItem in tempResult.Items)
+                            {
+                                if (scoreItem.Name == "劳动教育")
+                                {
+                                    result.Add(scoreItem);
+                                    goto END;
+                                }
+                            }
+                        }
+                    }
+                };
+                END:
                 return result;
             }
             catch (Exception e)
@@ -297,25 +287,18 @@ namespace GDUTSharp.Services
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
                 var temp = new Dictionary<string, string>
-                    {
-                        { "page", "1" },
-                        { "rows", "200" },
-                        { "sort", "xnxqdm" },
-                        { "order", "asc" },
-                    };
-                using var content = new FormUrlEncodedContent(temp);
-                using var request = new HttpRequestMessage(HttpMethod.Post, Constant.UNDER_COURSE_SEL)
                 {
-                    Content = content
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "sort", "kcflmc" },
                 };
-                request.Headers.Referrer = new(Constant.UNDER_REFER);
-                using HttpResponseMessage response = _client.SendAsync(request).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context().CourseSelCollection).Result;
+                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_COURSE_SEL, Constant.UNDER_COURSE_SEL).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelCollection).Result;
                 return result;
             }
             catch (Exception e)
             {
-                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求考试成绩异常。 {Exception}", e);
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求选课列表异常。 {Exception}", e);
                 return null;
             }
         }

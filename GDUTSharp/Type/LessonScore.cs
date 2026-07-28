@@ -1,25 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json.Serialization;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using System.Text.Json.Serialization;
 
 namespace GDUTSharp.Type;
 
 public class LessonScoreCollection
 {
     [JsonPropertyName("rows")]
-    public List<LessonScore> Lessons { get; set; } = [];
+    public List<LessonScore> Items { get; set; } = [];
 
-    public int Count => Lessons.Count;
+    public int Count => Items.Count;
 
-    public void Add(LessonScore item) => Lessons.Add(item);
+    public void Add(LessonScore item) => Items.Add(item);
 
-    public void Clear() => Lessons.Clear();
+    public void Clear() => Items.Clear();
 
-    public void CopyTo(LessonScore[] array, int arrayIndex) => Lessons.CopyTo(array, arrayIndex);
+    public void CopyTo(LessonScore[] array, int arrayIndex) => Items.CopyTo(array, arrayIndex);
 
-    public LessonScore this[int index] => Lessons[index];
+    public LessonScore this[int index] => Items[index];
 }
 
 public class LessonScore

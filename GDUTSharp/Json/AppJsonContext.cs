@@ -26,5 +26,6 @@ public partial class AppJsonContext : JsonSerializerContext
             UnicodeRanges.CjkUnifiedIdeographs,
             UnicodeRanges.CjkSymbolsandPunctuation),
     };
-    public static AppJsonContext Context(JsonSerializerOptions? opt = null) => new(opt ?? DefaultOptions);
+
+    public static AppJsonContext Context { get; } = new(DefaultOptions);
 }

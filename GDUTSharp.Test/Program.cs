@@ -49,16 +49,6 @@ namespace GDUTSharp.Test
                 var authResult = s.Auth(Constant.UNDER_GRADUATE_LOGIN);
                 logger.LogInformation("认证结果:{Result}", authResult);
 
-                //var result = s.GetExamSchedule("202502");
-                //if (result != null)
-                //{
-                //    foreach (var item in result.Lessons)
-                //    {
-                //        logger.LogInformation("{Result}", item);
-                //    }
-                //}
-
-                s.GetCourseSelection();
             }
         }
     }

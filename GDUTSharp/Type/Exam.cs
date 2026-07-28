@@ -6,17 +6,17 @@ namespace GDUTSharp.Type;
 public class ExamCollection
 {
     [JsonPropertyName("rows")]
-    public List<Exam> Lessons { get; set; } = [];
+    public List<Exam> Items { get; set; } = [];
 
-    public int Count => Lessons.Count;
+    public int Count => Items.Count;
 
-    public void Add(Exam item) => Lessons.Add(item);
+    public void Add(Exam item) => Items.Add(item);
 
-    public void Clear() => Lessons.Clear();
+    public void Clear() => Items.Clear();
 
-    public void CopyTo(Exam[] array, int arrayIndex) => Lessons.CopyTo(array, arrayIndex);
+    public void CopyTo(Exam[] array, int arrayIndex) => Items.CopyTo(array, arrayIndex);
 
-    public Exam this[int index] => Lessons[index];
+    public Exam this[int index] => Items[index];
 }
 
 /// <remarks>
@@ -25,6 +25,7 @@ public class ExamCollection
 /// </remarks>
 public class Exam
 {
+    [JsonPropertyName("jkteaxms")]
     public string Teachers { get; set; } = string.Empty;
 
     [JsonPropertyName("ksrq")]

@@ -9,17 +9,17 @@ namespace GDUTSharp.Type;
 public class LessonCollection
 {
     [JsonPropertyName("rows")]
-    public List<Lesson> Lessons { get; set; } = [];
+    public List<Lesson> Items { get; set; } = [];
 
-    public int Count => Lessons.Count;
+    public int Count => Items.Count;
 
-    public void Add(Lesson item) => Lessons.Add(item);
+    public void Add(Lesson item) => Items.Add(item);
 
-    public void Clear() => Lessons.Clear();
+    public void Clear() => Items.Clear();
 
-    public void CopyTo(Lesson[] array, int arrayIndex) => Lessons.CopyTo(array, arrayIndex);
+    public void CopyTo(Lesson[] array, int arrayIndex) => Items.CopyTo(array, arrayIndex);
 
-    public Lesson this[int index] => Lessons[index];
+    public Lesson this[int index] => Items[index];
 }
 
 public class Lesson

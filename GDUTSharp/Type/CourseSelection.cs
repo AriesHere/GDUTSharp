@@ -1,23 +1,21 @@
 ﻿using System.Text.Json.Serialization;
-using System.Timers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GDUTSharp.Type;
 
 public class CourseSelCollection
 {
     [JsonPropertyName("rows")]
-    public List<CourseSelection> Lessons { get; set; } = [];
+    public List<CourseSelection> Items { get; set; } = [];
 
-    public int Count => Lessons.Count;
+    public int Count => Items.Count;
 
-    public void Add(CourseSelection item) => Lessons.Add(item);
+    public void Add(CourseSelection item) => Items.Add(item);
 
-    public void Clear() => Lessons.Clear();
+    public void Clear() => Items.Clear();
 
-    public void CopyTo(CourseSelection[] array, int arrayIndex) => Lessons.CopyTo(array, arrayIndex);
+    public void CopyTo(CourseSelection[] array, int arrayIndex) => Items.CopyTo(array, arrayIndex);
 
-    public CourseSelection this[int index] => Lessons[index];
+    public CourseSelection this[int index] => Items[index];
 }
 
 public class CourseSelection
@@ -73,7 +71,7 @@ public class CourseSelection
     public override string ToString()
     {
         return $"""
-        Exam:
+        CourseSelection:
           - CourseCode:{CourseCode}
           - StudentsCount:{StudentsCount}
           - Profile:{Profile}
