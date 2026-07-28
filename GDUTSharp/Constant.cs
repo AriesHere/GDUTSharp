@@ -14,7 +14,7 @@
         public const string UNDER_REFER = "https://jxfw.gdut.edu.cn/";
 
         public const string UNDER_CLAZZ = "https://jxfw.gdut.edu.cn/xsgrkbcx!getDataList.action";
-
+        
         // 本科生考试安排
         public const string UNDER_EXAM = "https://jxfw.gdut.edu.cn/xsksap!getDataList.action";
 
@@ -23,6 +23,9 @@
 
         // 本科生登录链接
         public const string UNDER_GRADUATE_LOGIN = "https://jxfw.gdut.edu.cn/new/ssoLogin";
+
+        // 本科生选课列表
+        public const string UNDER_COURSE_SEL = "https://jxfw.gdut.edu.cn/xsxklist!getDataList.action";
 
         #endregion
 

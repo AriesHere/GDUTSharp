@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Json;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Json;
@@ -209,7 +210,7 @@ namespace GDUTSharp.Services
                 };
                 request.Headers.Referrer = new(Constant.UNDER_REFER);
                 using HttpResponseMessage response = _client.SendAsync(request).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Default.LessonCollection).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context().LessonCollection).Result;
                 return result;
             }
             catch (Exception e)
@@ -219,7 +220,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public ExamCollection? GetExam(string term)
+        public ExamCollection? GetExamSchedule(string term)
         {
             try
             {
@@ -242,7 +243,7 @@ namespace GDUTSharp.Services
                 };
                 request.Headers.Referrer = new(Constant.UNDER_REFER);
                 using HttpResponseMessage response = _client.SendAsync(request).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Default.ExamCollection).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context().ExamCollection).Result;
                 return result;
             }
             catch (Exception e)
@@ -277,7 +278,39 @@ namespace GDUTSharp.Services
                 };
                 request.Headers.Referrer = new(Constant.UNDER_REFER);
                 using HttpResponseMessage response = _client.SendAsync(request).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Default.LessonScoreCollection).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context().LessonScoreCollection).Result;
+                return result;
+            }
+            catch (Exception e)
+            {
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求考试成绩异常。 {Exception}", e);
+                return null;
+            }
+        }
+
+        public CourseSelCollection? GetCourseSelection()
+        {
+            try
+            {
+                if (_role != Role.UNDER_GRADUATE)
+                {
+                    throw new NotSupportedException("不支持除本科生以外身份的操作");
+                }
+                var temp = new Dictionary<string, string>
+                    {
+                        { "page", "1" },
+                        { "rows", "200" },
+                        { "sort", "xnxqdm" },
+                        { "order", "asc" },
+                    };
+                using var content = new FormUrlEncodedContent(temp);
+                using var request = new HttpRequestMessage(HttpMethod.Post, Constant.UNDER_COURSE_SEL)
+                {
+                    Content = content
+                };
+                request.Headers.Referrer = new(Constant.UNDER_REFER);
+                using HttpResponseMessage response = _client.SendAsync(request).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context().CourseSelCollection).Result;
                 return result;
             }
             catch (Exception e)

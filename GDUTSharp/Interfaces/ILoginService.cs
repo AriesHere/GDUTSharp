@@ -31,11 +31,16 @@ namespace GDUTSharp.Interfaces
         /// <summary>
         /// 获取考试安排信息
         /// </summary>
-        public ExamCollection? GetExam(string term);
+        public ExamCollection? GetExamSchedule(string term);
 
         /// <summary>
         /// 获取考试成绩信息
         /// </summary>
         public LessonScoreCollection? GetScore(string term);
+
+        /// <summary>
+        /// 获取选课信息
+        /// </summary>
+        public CourseSelCollection? GetCourseSelection();
     }
 }

@@ -48,7 +48,7 @@ public class Lesson
 
     [JsonPropertyName("pkrs")]
     [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-    public int StudentCount { get; set; } = 0;
+    public int StudentsCount { get; set; } = 0;
 
     [JsonPropertyName("teaxms")]
     public string Teacher { get; set; } = string.Empty;
@@ -107,7 +107,7 @@ public class Lesson
         Lesson:
           - Name:{Name}
           - ClassName:{string.Join(",", ClassName)}
-          - StudentCount:{StudentCount}
+          - StudentsCount:{StudentsCount}
           - Teacher:{Teacher}
           - Week:{Week}
           - DayOfWeek:{DayOfWeek}
