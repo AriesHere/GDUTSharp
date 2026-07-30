@@ -302,5 +302,30 @@ namespace GDUTSharp.Services
                 return null;
             }
         }
+
+        public List<CourseSelection>? GetSelectedCourse()
+        {
+            try
+            {
+                if (_role != Role.UNDER_GRADUATE)
+                {
+                    throw new NotSupportedException("不支持除本科生以外身份的操作");
+                }
+                var temp = new Dictionary<string, string>
+                {
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "sort", "kcflmc" },
+                };
+                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_COURSE_SEL_ED, Constant.UNDER_COURSE_SEL_ED).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListCourseSelection).Result;
+                return result;
+            }
+            catch (Exception e)
+            {
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求选课列表异常。 {Exception}", e);
+                return null;
+            }
+        }
     }
 }

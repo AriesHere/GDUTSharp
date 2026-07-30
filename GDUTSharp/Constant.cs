@@ -25,6 +25,9 @@
         // 本科生选课列表
         public const string UNDER_COURSE_SEL = "https://jxfw.gdut.edu.cn/xsxklist!getDataList.action";
 
+        // 本科生选课已选列表
+        public const string UNDER_COURSE_SEL_ED = "https://jxfw.gdut.edu.cn/xsxklist!getXzkcList.action";
+
         #endregion
 
         // 研究生登录链接

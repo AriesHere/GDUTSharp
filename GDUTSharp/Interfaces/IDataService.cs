@@ -39,8 +39,13 @@ namespace GDUTSharp.Interfaces
         public LessonScoreCollection? GetScore(string term);
 
         /// <summary>
-        /// 获取选课信息
+        /// 获取选课页面中显示的可选课程
         /// </summary>
         public CourseSelCollection? GetCourseSelection();
+
+        /// <summary>
+        /// 获取选课页面中显示的已选课程
+        /// </summary>
+        public List<CourseSelection>? GetSelectedCourse();
     }
 }
