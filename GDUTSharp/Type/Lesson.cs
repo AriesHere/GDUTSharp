@@ -101,6 +101,10 @@ public class Lesson
     [JsonPropertyName("sknrjj")]
     public string Profile { get; set; } = string.Empty;
 
+    /// <summary>学年学期代码</summary>
+    [JsonPropertyName("xnxqdm")]
+    public string Term { get; set; } = string.Empty;
+
     public override string ToString()
     {
         return $"""

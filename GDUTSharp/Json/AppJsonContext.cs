@@ -16,6 +16,7 @@ namespace GDUTSharp.Json;
 [JsonSerializable(typeof(CourseSelection))]
 [JsonSerializable(typeof(CourseSelCollection))]
 [JsonSerializable(typeof(List<CourseSelection>))]
+[JsonSerializable(typeof(List<Lesson>))]
 [JsonSerializable(typeof(List<int>))]
 [JsonSerializable(typeof(List<string>))]
 public partial class AppJsonContext : JsonSerializerContext

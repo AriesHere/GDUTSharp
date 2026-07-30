@@ -47,5 +47,11 @@ namespace GDUTSharp.Interfaces
         /// 获取选课页面中显示的已选课程
         /// </summary>
         public List<CourseSelection>? GetSelectedCourse();
+
+        /// <summary>
+        /// 获取课程任务
+        /// </summary>
+        /// <param name="CourseTaskCode">课程任务代码</param>
+        public List<Lesson>? GetCourseTask(string CourseTaskCode);
     }
 }

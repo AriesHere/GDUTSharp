@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Json;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Json;
@@ -298,7 +299,7 @@ namespace GDUTSharp.Services
             }
             catch (Exception e)
             {
-                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求选课列表异常。 {Exception}", e);
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求可选课列表异常。 {Exception}", e);
                 return null;
             }
         }
@@ -323,7 +324,34 @@ namespace GDUTSharp.Services
             }
             catch (Exception e)
             {
-                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求选课列表异常。 {Exception}", e);
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求已选课列表异常。 {Exception}", e);
+                return null;
+            }
+        }
+
+        public List<Lesson>? GetCourseTask(string code)
+        {
+            try
+            {
+                if (_role != Role.UNDER_GRADUATE)
+                {
+                    throw new NotSupportedException("不支持除本科生以外身份的操作");
+                }
+                var temp = new Dictionary<string, string>
+                {
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "kcrwdm", code },
+                    { "sort", "zc,xq,jcdm" },
+                    { "order", "asc" },
+                };
+                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_COURSE_TASK, Constant.UNDER_COURSE_TASK).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLesson).Result;
+                return result;
+            }
+            catch (Exception e)
+            {
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求课程任务异常。 {Exception}", e);
                 return null;
             }
         }
