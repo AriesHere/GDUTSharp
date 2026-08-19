@@ -254,6 +254,7 @@ namespace GDUTSharp.Services
                         terms.Add(item.xnxqmc);
                     foreach (var item in terms)
                     {
+                        temp["xnxqdm"] = Helper.TermStringToInt6Digit(item).ToString();
                         response = this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE).Result;
                         var tempResult = response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection).Result;
                         response.Dispose();
