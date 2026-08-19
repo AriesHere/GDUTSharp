@@ -17,7 +17,8 @@ public class ExamScheduleDtoCollection : DtoCollectionBase<ExamScheduleDto>
 public class ExamScheduleDto
 {
     /// <summary>监考老师</summary>
-    public string jkteaxms { get; set; } = string.Empty;
+    [JsonConverter(typeof(SplittedStringConverter))]
+    public List<string> jkteaxms { get; set; } = [];
 
     /// <summary>考试日期</summary>
     public DateOnly ksrq { get; set; } = DateOnly.MinValue;

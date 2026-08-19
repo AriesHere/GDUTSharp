@@ -3,7 +3,7 @@
 public class ExamSchedule
 {
     /// <summary>监考老师</summary>
-    public string Teachers { get; set; } = string.Empty;
+    public List<string> Teachers { get; set; } = [];
 
     /// <summary>考试日期</summary>
     public DateOnly Date { get; set; } = DateOnly.MinValue;
@@ -44,7 +44,7 @@ public class ExamSchedule
     {
         return $"""
         Exam:
-          - Teachers:{Teachers}
+          - Teachers:{string.Join(',', Teachers)}
           - Date:{Date}
           - Week:{Week}
           - DayOfWeek:{DayOfWeek}

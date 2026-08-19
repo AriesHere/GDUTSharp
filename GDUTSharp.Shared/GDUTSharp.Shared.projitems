@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Json\AppJsonContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\ClassNameConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\SessionsConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Json\SplittedStringConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\CourseSel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\CourseScoreDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\CourseSelDto.cs" />
