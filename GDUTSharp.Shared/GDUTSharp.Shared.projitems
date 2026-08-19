@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>52f5c502-4662-4b7f-add8-71132dcc34f5</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>GDUTSharp.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Constant.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Json\AppJsonContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Json\ClassNameConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Json\SessionsConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\CourseSel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\CourseScoreDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\CourseSelDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\DtoCollectionBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\ExamScheduleDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\LessonDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\ExamSchedule.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\Lesson.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\CourseScore.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\Sessions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\User.cs" />
+  </ItemGroup>
+</Project>

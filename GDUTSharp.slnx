@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="GDUTSharp.Shared/GDUTSharp.Shared.shproj" Id="52f5c502-4662-4b7f-add8-71132dcc34f5" />
   <Project Path="GDUTSharp.Test/GDUTSharp.Test.csproj" Id="dc81b6da-32af-4260-8da5-6ad85ae69a14" />
   <Project Path="GDUTSharp/GDUTSharp.csproj" />
 </Solution>

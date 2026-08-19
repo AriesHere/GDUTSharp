@@ -1,8 +1,7 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace GDUTSharp.Json
+namespace GDUTSharp.Shared.Json
 {
     public class SessionsConverter : JsonConverter<List<int>>
     {

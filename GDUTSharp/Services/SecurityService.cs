@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using GDUTSharp.Interfaces;
+using GDUTSharp.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services

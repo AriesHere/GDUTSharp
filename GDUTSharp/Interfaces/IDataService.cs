@@ -1,4 +1,4 @@
-﻿using GDUTSharp.Type;
+﻿using GDUTSharp.Shared.Type;
 
 namespace GDUTSharp.Interfaces
 {
@@ -26,27 +26,27 @@ namespace GDUTSharp.Interfaces
         /// <summary>
         /// 获取课表信息
         /// </summary>
-        public LessonCollection? GetLessons(string term);
+        public List<Lesson>? GetLessons(string term);
 
         /// <summary>
         /// 获取考试安排信息
         /// </summary>
-        public ExamCollection? GetExamSchedule(string term);
+        public List<ExamSchedule>? GetExamSchedule(string term);
 
         /// <summary>
         /// 获取考试成绩信息
         /// </summary>
-        public LessonScoreCollection? GetScore(string term);
+        public List<CourseScore>? GetCourseScore(string term);
 
         /// <summary>
         /// 获取选课页面中显示的可选课程
         /// </summary>
-        public CourseSelCollection? GetCourseSelection();
+        public List<CourseSel>? GetCourseSelection();
 
         /// <summary>
         /// 获取选课页面中显示的已选课程
         /// </summary>
-        public List<CourseSelection>? GetSelectedCourse();
+        public List<CourseSel>? GetSelectedCourse();
 
         /// <summary>
         /// 获取课程任务

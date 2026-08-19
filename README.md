@@ -6,7 +6,7 @@
 
 支持 AOT
 
-示例
+示例:
 
 ```C#
 // 注册到 DI 容器中
@@ -43,7 +43,7 @@ using (var scope = sc.CreateScope())
     logger.LogInformation("认证结果:{Result}", authResult);
 
     // 这里可以先通过 GetTerm 方法获取学期代码
-    var result = dataService.GetExam("202502");
+    var result = dataService.GetExamSchedule("202502");
     if (result != null)
     {
         foreach (var item in result.Lessons)

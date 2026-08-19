@@ -1,9 +1,9 @@
-﻿using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using GDUTSharp.Interfaces;
-using GDUTSharp.Json;
-using GDUTSharp.Type;
+using GDUTSharp.Shared;
+using GDUTSharp.Shared.Json;
+using GDUTSharp.Shared.Type;
 using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
 
@@ -161,7 +161,6 @@ namespace GDUTSharp.Services
                 return content[(index - 2 - "202502".Length)..(index - 2)];
                 // content 摘要:
                 // <option value='202601' >2026秋季</option><option value='202502' selected>2026春季</option><option value='202501' >2025秋季</option>
-                // 可见: 20XX春季 => 20XX01, 20XX秋季 => 20XY02 (Y == X + 1)
             }
             catch (Exception e)
             {
@@ -170,7 +169,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public LessonCollection? GetLessons(string term)
+        public List<Lesson>? GetLessons(string term)
         {
             try
             {
@@ -188,8 +187,9 @@ namespace GDUTSharp.Services
                     { "order", "asc" },
                 };
                 using HttpResponseMessage response = this.Post(temp, Constant.UNDER_CLAZZ, Constant.UNDER_CLAZZ).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonCollection).Result;
-                return result;
+#pragma warning disable CS8604 // Possible null reference argument.
+                return response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection).Result;
+#pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
             {
@@ -198,7 +198,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public ExamCollection? GetExamSchedule(string term)
+        public List<ExamSchedule>? GetExamSchedule(string term)
         {
             try
             {
@@ -215,8 +215,9 @@ namespace GDUTSharp.Services
                     { "order", "asc" },
                 };
                 using HttpResponseMessage response = this.Post(temp, Constant.UNDER_EXAM, Constant.UNDER_EXAM).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamCollection).Result;
-                return result;
+#pragma warning disable CS8604 // Possible null reference argument.
+                return response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamScheduleDtoCollection).Result;
+#pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
             {
@@ -225,7 +226,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public LessonScoreCollection? GetScore(string term)
+        public List<CourseScore>? GetCourseScore(string term)
         {
             HttpResponseMessage response;
             try
@@ -244,23 +245,23 @@ namespace GDUTSharp.Services
                     { "order", "asc" },
                 };
                 response = this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonScoreCollection).Result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection).Result;
                 response.Dispose();
                 if (result != null && term == "")
                 {
                     HashSet<string> terms = [];
-                    foreach (var item in result.Items)
-                        terms.Add(item.Term);
+                    foreach (var item in result.rows)
+                        terms.Add(item.xnxqmc);
                     foreach (var item in terms)
                     {
                         response = this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE).Result;
-                        var tempResult = response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonScoreCollection).Result;
+                        var tempResult = response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection).Result;
                         response.Dispose();
                         if (tempResult != null)
                         {
-                            foreach (var scoreItem in tempResult.Items)
+                            foreach (var scoreItem in tempResult.rows)
                             {
-                                if (scoreItem.Name == "劳动教育")
+                                if (scoreItem.kcmc == "劳动教育")
                                 {
                                     result.Add(scoreItem);
                                     goto END;
@@ -270,7 +271,9 @@ namespace GDUTSharp.Services
                     }
                 };
                 END:
+#pragma warning disable CS8604 // Possible null reference argument.
                 return result;
+#pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
             {
@@ -279,7 +282,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public CourseSelCollection? GetCourseSelection()
+        public List<CourseSel>? GetCourseSelection()
         {
             try
             {
@@ -294,8 +297,9 @@ namespace GDUTSharp.Services
                     { "sort", "kcflmc" },
                 };
                 using HttpResponseMessage response = this.Post(temp, Constant.UNDER_COURSE_SEL, Constant.UNDER_COURSE_SEL).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelCollection).Result;
-                return result;
+#pragma warning disable CS8604 // Possible null reference argument.
+                return response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelDtoCollection).Result;
+#pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
             {
@@ -304,7 +308,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public List<CourseSelection>? GetSelectedCourse()
+        public List<CourseSel>? GetSelectedCourse()
         {
             try
             {
@@ -319,8 +323,9 @@ namespace GDUTSharp.Services
                     { "sort", "kcflmc" },
                 };
                 using HttpResponseMessage response = this.Post(temp, Constant.UNDER_COURSE_SEL_ED, Constant.UNDER_COURSE_SEL_ED).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListCourseSelection).Result;
-                return result;
+                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListCourseSelDto).Result;
+                if (result is null) return null;
+                else return [..result];
             }
             catch (Exception e)
             {

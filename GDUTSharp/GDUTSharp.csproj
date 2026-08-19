@@ -24,4 +24,6 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
   </ItemGroup>
 
+  <Import Project="..\GDUTSharp.Shared\GDUTSharp.Shared.projitems" Label="Shared" />
+
 </Project>

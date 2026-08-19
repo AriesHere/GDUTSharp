@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
-using GDUTSharp.Interfaces;
-using GDUTSharp.Type;
+﻿using GDUTSharp.Interfaces;
+using GDUTSharp.Shared;
+using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -20,12 +20,14 @@ namespace GDUTSharp.Test
     [TestClass]
     public sealed class Test : IDisposable
     {
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         private IServiceScope _scope;
         private IDataService _service;
         private LoginInfo _testInfo;
         private string _testTerm;
         private string _courseTaskCode;
-        private int _flag = 0;
+
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [TestInitialize]
         public void TestInit()
@@ -35,6 +37,7 @@ namespace GDUTSharp.Test
             _testTerm = dbopt.Value.Term;
             _scope = General.Host.Services.CreateScope();
             _service = _scope.ServiceProvider.GetRequiredService<IDataService>();
+            _courseTaskCode = dbopt.Value.CourseTaskCode;
         }
 
         [TestCleanup]
@@ -64,7 +67,7 @@ namespace GDUTSharp.Test
             result = _service.GetTerm();
             Assert.IsNotNull(result, "获取学期代码失败");
 
-            result = _service.GetScore(_testTerm);
+            result = _service.GetCourseScore(_testTerm);
             Assert.IsNotNull(result, "获取课程成绩失败");
 
             result = _service.GetLessons(_testTerm);

@@ -1,4 +1,4 @@
-﻿namespace GDUTSharp.Type;
+﻿namespace GDUTSharp.Shared.Type;
 
 public class SessionCollection
 {

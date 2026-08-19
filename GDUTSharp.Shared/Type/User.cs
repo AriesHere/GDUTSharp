@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace GDUTSharp.Type
+namespace GDUTSharp.Shared.Type
 {
     public class LoginInfo
     {
