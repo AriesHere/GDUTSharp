@@ -32,7 +32,7 @@ namespace GDUTSharp.Test
         [TestInitialize]
         public void TestInit()
         {
-            var dbopt = General.Host.Services.GetRequiredService<IOptions<DebugOptions>>();
+            var dbopt = General.Host!.Services.GetRequiredService<IOptions<DebugOptions>>();
             _testInfo = new() { UserName = dbopt.Value.UserName, Password = dbopt.Value.Password };
             _testTerm = dbopt.Value.Term;
             _scope = General.Host.Services.CreateScope();
@@ -57,7 +57,7 @@ namespace GDUTSharp.Test
                 return;
             }
 
-            result = _service.Auth(Constant.UNDER_GRADUATE_LOGIN).Result;
+            result = _service.Auth(IDataService.SupportedServices.JXFW).Result;
             if (!result)
             {
                 Assert.Fail("认证失败");

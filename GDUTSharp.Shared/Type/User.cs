@@ -4,11 +4,12 @@ namespace GDUTSharp.Shared.Type
 {
     public class LoginInfo
     {
+        /// <summary>学号</summary>
         [NotNull] public required string UserName { get; set; }
 
         [NotNull] public required string Password { get; set; }
 
-        public Role Role => (Role)(UserName[0] - '0');
+        public Role Role => UserName.Length > 0 ? (Role)(UserName[0] - '0') : Role.UNKNOWN;
     }
 
     public enum Role
@@ -16,5 +17,6 @@ namespace GDUTSharp.Shared.Type
         UNDER_GRADUATE = 3,
         GRADUATE = 2,
         TRACHER = 0,
+        UNKNOWN = -1,
     }
 }

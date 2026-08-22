@@ -1,11 +1,4 @@
-# GDUTSharp
-
-对 [gdutday/gdutday-wechat3.0-java](https://github.com/gdutday/gdutday-wechat3.0-java) 的 C# 不完全重实现  
-目前仅支持本科生相关的部分  
-支持 AOT  
-示例:  
-```C#
-using GDUTSharp.Interfaces;
+﻿using GDUTSharp.Interfaces;
 using GDUTSharp.Services;
 using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,4 +60,3 @@ namespace GDUTSharp.Example
         }
     }
 }
-```

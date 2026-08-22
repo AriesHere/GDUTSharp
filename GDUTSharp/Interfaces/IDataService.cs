@@ -18,6 +18,8 @@ namespace GDUTSharp.Interfaces
         /// </summary>
         public Task<bool> Auth(string url);
 
+        public Task<bool> Auth(SupportedServices service);
+
         /// <summary>
         /// 获取学期信息
         /// </summary>
@@ -53,5 +55,10 @@ namespace GDUTSharp.Interfaces
         /// </summary>
         /// <param name="CourseTaskCode">课程任务代码</param>
         public Task<List<Lesson>?> GetCourseTask(string CourseTaskCode);
+
+        public enum SupportedServices
+        {
+            JXFW,
+        }
     }
 }

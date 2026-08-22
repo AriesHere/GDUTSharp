@@ -1,11 +1,12 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
-using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
+using static GDUTSharp.Interfaces.IDataService;
 
 namespace GDUTSharp.Services
 {
@@ -14,7 +15,7 @@ namespace GDUTSharp.Services
     /// <para>碎碎念:</para>
     /// <para>据测试，正常情况下<see cref="Login(LoginInfo)"/> 会重定向五次，<see cref="Auth(string)"/>会重定向三次（虽然不知道这个数据有什么用</para>
     /// </remarks>
-    public class DataService(ILogger<DataService> logger, ICommonClient client, ISecurityService security) : IDataService
+    public partial class DataService(ILogger<DataService> logger, ICommonClient client, ISecurityService security) : IDataService
     {
         private readonly ILogger<DataService> _logger = logger;
 		private readonly ICommonClient _client = client;
@@ -42,30 +43,45 @@ namespace GDUTSharp.Services
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
                 using var request = new HttpRequestMessage(HttpMethod.Get, Constant.AUTHSERVER_LOGIN_URL);
-                response = await _client.SendAsync(request);
-                string html = await response.Content.ReadAsStringAsync();
-                response.Dispose();
-                var doc = new HtmlDocument();
-                doc.LoadHtml(html);
-
                 var formData = new Dictionary<string, string>();
-                string pwdEncryptSalt = string.Empty;
-                var hiddenInputs = doc.DocumentNode.SelectNodes("//*[@id=\"pwdFromId\"]//input[@type=\"hidden\"]"); // 对应原来的css选择器 #pwdFromId input[type=hidden]
-                foreach (var input in hiddenInputs)
+
+                using (var tempResponse = await _client.SendAsync(request))
                 {
-                    string name = input.GetAttributeValue("name", "");
-                    string value = input.GetAttributeValue("value", "");
-                    string id = input.GetAttributeValue("id", "");
+                    string pwdEncryptSalt = string.Empty;
+                    string html = await tempResponse.Content.ReadAsStringAsync();
 
-                    if (!string.IsNullOrEmpty(name))
-                        formData[name] = value;
+                    // 这里采用了相当激进的优化，如果出错，请取消注释后面的内容并引入 nuget 包：HtmlAgilityPack v1.12.4
+                    Match saltMatch = Login_SaltRegex().Match(html);
+                    pwdEncryptSalt = saltMatch.Success ? saltMatch.Groups[1].Value : "";
+                    Match execMatch = Login_ExecRegex().Match(html);
+                    string execution = execMatch.Success ? execMatch.Groups[1].Value : "";
+                    formData["_eventId"] = "submit";
+                    formData["cllt"] = "userNameLogin";
+                    formData["dllt"] = "generalLogin";
+                    formData["lt"] = "";
+                    formData["execution"] = execution;
+                    /*
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(html);
+                    var hiddenInputs = doc.DocumentNode.SelectNodes("//*[@id=\"pwdFromId\"]//input[@type=\"hidden\"]"); // 对应原来的css选择器 #pwdFromId input[type=hidden]
+                    foreach (var input in hiddenInputs)
+                    {
+                        string name = input.GetAttributeValue("name", "");
+                        string value = input.GetAttributeValue("value", "");
+                        string id = input.GetAttributeValue("id", "");
 
-                    if (id == "pwdEncryptSalt")
-                        pwdEncryptSalt = value;
+                        if (!string.IsNullOrEmpty(name))
+                            formData[name] = value;
+
+                        if (id == "pwdEncryptSalt")
+                            pwdEncryptSalt = value;
+                    }
+                    */
+
+                    formData[""] = pwdEncryptSalt;
+                    formData["username"] = loginInfo.UserName;
+                    formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
                 }
-                formData[""] = pwdEncryptSalt;
-                formData["username"] = loginInfo.UserName;
-                formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
 
                 response = await this.Post(formData, Constant.AUTHSERVER_LOGIN_URL, Constant.AUTHSERVER_LOGIN_URL);
 
@@ -95,6 +111,23 @@ namespace GDUTSharp.Services
             {
                 response?.Dispose();
             }
+        }
+
+        [GeneratedRegex(@"id=""pwdEncryptSalt""[^>]*?value=""([^""]*)""")]
+        private static partial Regex Login_SaltRegex();
+
+        [GeneratedRegex(@"id=""execution""[^>]*?value=""([^""]*)""")]
+        private static partial Regex Login_ExecRegex();
+
+        public async Task<bool> Auth(SupportedServices service)
+        {
+            return await Auth(
+                service switch 
+                { 
+                    SupportedServices.JXFW => Constant.UNDER_GRADUATE_LOGIN,
+                    _ => Constant.UNDER_GRADUATE_LOGIN,
+                }
+            );
         }
 
         public async Task<bool> Auth(string url)
