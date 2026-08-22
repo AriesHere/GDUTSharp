@@ -48,41 +48,41 @@ namespace GDUTSharp.Test
         [Priority(0)]
         public void TestJXFW()
         {
-            bool r = _service.Login(_testInfo);
-            if (!r)
+            dynamic? result;
+
+            result = _service.Login(_testInfo).Result;
+            if (!result)
             {
                 Assert.Fail("登录失败");
                 return;
             }
 
-            r = _service.Auth(Constant.UNDER_GRADUATE_LOGIN);
-            if (!r)
+            result = _service.Auth(Constant.UNDER_GRADUATE_LOGIN).Result;
+            if (!result)
             {
                 Assert.Fail("认证失败");
                 return;
             }
 
-            dynamic? result;
-
-            result = _service.GetTerm();
+            result = _service.GetTerm().Result;
             Assert.IsNotNull(result, "获取学期代码失败");
 
-            result = _service.GetCourseScore(_testTerm);
+            result = _service.GetCourseScore(_testTerm).Result;
             Assert.IsNotNull(result, "获取课程成绩失败");
 
-            result = _service.GetLessons(_testTerm);
+            result = _service.GetLessons(_testTerm).Result;
             Assert.IsNotNull(result, "获取课程安排失败");
 
-            result = _service.GetExamSchedule(_testTerm);
+            result = _service.GetExamSchedule(_testTerm).Result;
             Assert.IsNotNull(result, "获取考试安排失败");
 
-            result = _service.GetCourseSelection();
+            result = _service.GetCourseSelection().Result;
             Assert.IsNotNull(result, "获取选课列表失败");
 
-            result = _service.GetSelectedCourse();
+            result = _service.GetSelectedCourse().Result;
             Assert.IsNotNull(result, "获取已选课列表失败");
 
-            result = _service.GetCourseTask(_courseTaskCode);
+            result = _service.GetCourseTask(_courseTaskCode).Result;
             Assert.IsNotNull(result, "获取课程任务失败");
         }
     }

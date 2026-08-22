@@ -32,7 +32,7 @@ namespace GDUTSharp.Services
             return await _client.SendAsync(request);
         }
 
-        public bool Login(LoginInfo loginInfo)
+        public async Task<bool> Login(LoginInfo loginInfo)
         {
             HttpResponseMessage? response = null;
             try
@@ -42,7 +42,9 @@ namespace GDUTSharp.Services
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
                 using var request = new HttpRequestMessage(HttpMethod.Get, Constant.AUTHSERVER_LOGIN_URL);
-                string html = _client.SendAsync(request).Result.Content.ReadAsStringAsync().Result;
+                response = await _client.SendAsync(request);
+                string html = await response.Content.ReadAsStringAsync();
+                response.Dispose();
                 var doc = new HtmlDocument();
                 doc.LoadHtml(html);
 
@@ -65,7 +67,7 @@ namespace GDUTSharp.Services
                 formData["username"] = loginInfo.UserName;
                 formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
 
-                response = this.Post(formData, Constant.AUTHSERVER_LOGIN_URL, Constant.AUTHSERVER_LOGIN_URL).Result;
+                response = await this.Post(formData, Constant.AUTHSERVER_LOGIN_URL, Constant.AUTHSERVER_LOGIN_URL);
 
                 for (int i = 0; i < 5; i++)
                 {
@@ -76,7 +78,8 @@ namespace GDUTSharp.Services
                         break;
                     if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i, location);
                     response.Dispose();
-                    response = _client.SendAsync(new HttpRequestMessage(HttpMethod.Get, location)).Result;
+                    using var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
+                    response = await _client.SendAsync(redirectRequest);
                 }
 
                 var result = response.StatusCode == HttpStatusCode.Found;
@@ -94,7 +97,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public bool Auth(string url)
+        public async Task<bool> Auth(string url)
         {
             HttpResponseMessage? response = null;
             try
@@ -108,7 +111,7 @@ namespace GDUTSharp.Services
                     url = Constant.AUTHSERVER_AUTH_Prefix + url;
                 }
                 using var postRequest = new HttpRequestMessage(HttpMethod.Post, url);
-                response = _client.SendAsync(postRequest).Result;
+                response = await _client.SendAsync(postRequest);
 
                 for (int i = 0; i < 5; i++)
                 {
@@ -119,7 +122,8 @@ namespace GDUTSharp.Services
                         break;
                     if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i, location);
                     response.Dispose();
-                    response = _client.SendAsync(new HttpRequestMessage(HttpMethod.Get, location)).Result;
+                    using var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
+                    response = await _client.SendAsync(redirectRequest);
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -128,8 +132,7 @@ namespace GDUTSharp.Services
                     // ?< !DOCTYPE html >< html class="root-main">
                     // <!-- 移动端 --><!-- PC端 --><!--校外用户登录--><!-- 二维码扫码登录 --><!-- 兼容性登录 --><!--校外用户登录--><!-- 帐号登录或动态码登录 --><head>
                     //         <meta charset = "utf-8" />
-                    Stream s = response.Content.ReadAsStream();
-                    TextReader reader = new StreamReader(s);
+                    using var reader = new StreamReader(response.Content.ReadAsStream());
                     reader.ReadLine();  // skip
                     return reader.ReadLine()?.StartsWith("<!-- 移动端 -->") == false;
                 }
@@ -146,7 +149,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public string? GetTerm()
+        public async Task<string?> GetTerm()
         {
             try
             {
@@ -156,7 +159,8 @@ namespace GDUTSharp.Services
                 }
                 using var request = new HttpRequestMessage(HttpMethod.Post, Constant.UNDER_CLAZZ_TERM);
                 request.Headers.Referrer = new(Constant.UNDER_CLAZZ_TERM);
-                string content = _client.SendAsync(request).Result.Content.ReadAsStringAsync().Result;
+                using var response = await _client.SendAsync(request);
+                string content = await response.Content.ReadAsStringAsync();
                 int index = content.IndexOf("selected");
                 return content[(index - 2 - "202502".Length)..(index - 2)];
                 // content 摘要:
@@ -169,7 +173,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public List<Lesson>? GetLessons(string term)
+        public async Task<List<Lesson>?> GetLessons(string term)
         {
             try
             {
@@ -186,9 +190,9 @@ namespace GDUTSharp.Services
                     { "sort", "zc,xq,jcdm" },
                     { "order", "asc" },
                 };
-                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_CLAZZ, Constant.UNDER_CLAZZ).Result;
+                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_CLAZZ, Constant.UNDER_CLAZZ);
 #pragma warning disable CS8604 // Possible null reference argument.
-                return response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection).Result;
+                return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection);
 #pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
@@ -198,7 +202,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public List<ExamSchedule>? GetExamSchedule(string term)
+        public async Task<List<ExamSchedule>?> GetExamSchedule(string term)
         {
             try
             {
@@ -214,9 +218,9 @@ namespace GDUTSharp.Services
                     { "sort", "zc,xq,jcdm2" },
                     { "order", "asc" },
                 };
-                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_EXAM, Constant.UNDER_EXAM).Result;
+                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_EXAM, Constant.UNDER_EXAM);
 #pragma warning disable CS8604 // Possible null reference argument.
-                return response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamScheduleDtoCollection).Result;
+                return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamScheduleDtoCollection);
 #pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
@@ -226,9 +230,9 @@ namespace GDUTSharp.Services
             }
         }
 
-        public List<CourseScore>? GetCourseScore(string term)
+        public async Task<List<CourseScore>?> GetCourseScore(string term)
         {
-            HttpResponseMessage response;
+            HttpResponseMessage? response = null;
             try
             {
                 if (_role != Role.UNDER_GRADUATE)
@@ -244,8 +248,8 @@ namespace GDUTSharp.Services
                     { "sort", "xnxqdm" },
                     { "order", "asc" },
                 };
-                response = this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection).Result;
+                response = await this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE);
+                var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection);
                 response.Dispose();
                 if (result != null && term == "")
                 {
@@ -255,8 +259,8 @@ namespace GDUTSharp.Services
                     foreach (var item in terms)
                     {
                         temp["xnxqdm"] = Helper.TermStringToInt6Digit(item).ToString();
-                        response = this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE).Result;
-                        var tempResult = response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection).Result;
+                        response = await this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE);
+                        var tempResult = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection);
                         response.Dispose();
                         if (tempResult != null)
                         {
@@ -281,9 +285,13 @@ namespace GDUTSharp.Services
                 if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求考试成绩异常。 {Exception}", e);
                 return null;
             }
+            finally
+            {
+                response?.Dispose();
+            }
         }
 
-        public List<CourseSel>? GetCourseSelection()
+        public async Task<List<CourseSel>?> GetCourseSelection()
         {
             try
             {
@@ -297,9 +305,9 @@ namespace GDUTSharp.Services
                     { "rows", "300" },
                     { "sort", "kcflmc" },
                 };
-                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_COURSE_SEL, Constant.UNDER_COURSE_SEL).Result;
+                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_COURSE_SEL, Constant.UNDER_COURSE_SEL);
 #pragma warning disable CS8604 // Possible null reference argument.
-                return response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelDtoCollection).Result;
+                return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelDtoCollection);
 #pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
@@ -309,7 +317,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public List<CourseSel>? GetSelectedCourse()
+        public async Task<List<CourseSel>?> GetSelectedCourse()
         {
             try
             {
@@ -323,8 +331,8 @@ namespace GDUTSharp.Services
                     { "rows", "300" },
                     { "sort", "kcflmc" },
                 };
-                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_COURSE_SEL_ED, Constant.UNDER_COURSE_SEL_ED).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListCourseSelDto).Result;
+                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_COURSE_SEL_ED, Constant.UNDER_COURSE_SEL_ED);
+                var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListCourseSelDto);
                 if (result is null) return null;
                 else return [..result];
             }
@@ -335,7 +343,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public List<Lesson>? GetCourseTask(string code)
+        public async Task<List<Lesson>?> GetCourseTask(string code)
         {
             try
             {
@@ -351,8 +359,8 @@ namespace GDUTSharp.Services
                     { "sort", "zc,xq,jcdm" },
                     { "order", "asc" },
                 };
-                using HttpResponseMessage response = this.Post(temp, Constant.UNDER_COURSE_TASK, Constant.UNDER_COURSE_TASK).Result;
-                var result = response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLesson).Result;
+                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_COURSE_TASK, Constant.UNDER_COURSE_TASK);
+                var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLesson);
                 return result;
             }
             catch (Exception e)

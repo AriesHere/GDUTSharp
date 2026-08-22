@@ -1,13 +1,9 @@
 # GDUTSharp
 
-对 [gdutday/gdutday-wechat3.0-java](https://github.com/gdutday/gdutday-wechat3.0-java) 的 C# 不完全重实现
-
-目前仅支持本科生相关的部分
-
-支持 AOT
-
-示例:
-
+对 [gdutday/gdutday-wechat3.0-java](https://github.com/gdutday/gdutday-wechat3.0-java) 的 C# 不完全重实现  
+目前仅支持本科生相关的部分  
+支持 AOT  
+示例:  
 ```C#
 // 注册到 DI 容器中
 var host = Host.CreateDefaultBuilder()
@@ -36,20 +32,20 @@ using (var scope = sc.CreateScope())
     // 先登录，再认证
     // 如果学号密码正确，这两个结果都是 true
     // 自行补充学号密码错误时的处理逻辑
-    var loginResult = dataService.Login(test);
+    var loginResult = dataService.Login(test).Result;
     logger.LogInformation("登录结果:{Result}", loginResult);
 
-    var authResult = dataService.Auth(Constant.UNDER_GRADUATE_LOGIN);
+    var authResult = dataService.Auth(Constant.UNDER_GRADUATE_LOGIN).Result;
     logger.LogInformation("认证结果:{Result}", authResult);
 
     // 这里可以先通过 GetTerm 方法获取学期代码
-    var result = dataService.GetExamSchedule("202502");
+    var result = dataService.GetExamSchedule("202502").Result;
     if (result != null)
     {
         foreach (var item in result.Lessons)
         {
             // 输出
-            logger.LogInformation("{Result}", item);
+            logger.LogInformation("{Result}", item).Result;
         }
     }
 }
