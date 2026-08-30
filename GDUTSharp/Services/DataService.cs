@@ -17,12 +17,12 @@ namespace GDUTSharp.Services
     /// </remarks>
     public partial class DataService(ILogger<DataService> logger, ICommonClient client, ISecurityService security) : IDataService
     {
-        private readonly ILogger<DataService> _logger = logger;
-		private readonly ICommonClient _client = client;
-        private readonly ISecurityService _security = security;
-        private Role? _role = null;
+        protected readonly ILogger<DataService> _logger = logger;
+        protected readonly ICommonClient _client = client;
+        protected readonly ISecurityService _security = security;
+        protected Role? _role = null;
 
-        private async Task<HttpResponseMessage> Post(Dictionary<string, string> content, string url, string referer)
+        protected async Task<HttpResponseMessage> Post(Dictionary<string, string> content, string url, string referer)
         {
             using var c = new FormUrlEncodedContent(content);
             using var request = new HttpRequestMessage(HttpMethod.Post, url)
@@ -33,7 +33,7 @@ namespace GDUTSharp.Services
             return await _client.SendAsync(request);
         }
 
-        public async Task<bool> Login(LoginInfo loginInfo)
+        public async virtual Task<bool> Login(LoginInfo loginInfo)
         {
             HttpResponseMessage? response = null;
             try
@@ -42,7 +42,7 @@ namespace GDUTSharp.Services
                 {
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
-                using var request = new HttpRequestMessage(HttpMethod.Get, Constant.AUTHSERVER_LOGIN_URL);
+                using var request = new HttpRequestMessage(HttpMethod.Get, GDUTConstant.AUTHSERVER_LOGIN_URL);
                 var formData = new Dictionary<string, string>();
 
                 using (var tempResponse = await _client.SendAsync(request))
@@ -50,7 +50,8 @@ namespace GDUTSharp.Services
                     string pwdEncryptSalt = string.Empty;
                     string html = await tempResponse.Content.ReadAsStringAsync();
 
-                    // 这里采用了相当激进的优化，如果出错，请取消注释后面的内容并引入 nuget 包：HtmlAgilityPack v1.12.4
+                    // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这
+                    // 样，请使用 GDUTSharp.Extra.SteadyDataService 中的 Login 方法
                     Match saltMatch = Login_SaltRegex().Match(html);
                     pwdEncryptSalt = saltMatch.Success ? saltMatch.Groups[1].Value : "";
                     Match execMatch = Login_ExecRegex().Match(html);
@@ -60,30 +61,12 @@ namespace GDUTSharp.Services
                     formData["dllt"] = "generalLogin";
                     formData["lt"] = "";
                     formData["execution"] = execution;
-                    /*
-                    var doc = new HtmlDocument();
-                    doc.LoadHtml(html);
-                    var hiddenInputs = doc.DocumentNode.SelectNodes("//*[@id=\"pwdFromId\"]//input[@type=\"hidden\"]"); // 对应原来的css选择器 #pwdFromId input[type=hidden]
-                    foreach (var input in hiddenInputs)
-                    {
-                        string name = input.GetAttributeValue("name", "");
-                        string value = input.GetAttributeValue("value", "");
-                        string id = input.GetAttributeValue("id", "");
-
-                        if (!string.IsNullOrEmpty(name))
-                            formData[name] = value;
-
-                        if (id == "pwdEncryptSalt")
-                            pwdEncryptSalt = value;
-                    }
-                    */
-
                     formData[""] = pwdEncryptSalt;
                     formData["username"] = loginInfo.UserName;
                     formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
                 }
 
-                response = await this.Post(formData, Constant.AUTHSERVER_LOGIN_URL, Constant.AUTHSERVER_LOGIN_URL);
+                response = await this.Post(formData, GDUTConstant.AUTHSERVER_LOGIN_URL, GDUTConstant.AUTHSERVER_LOGIN_URL);
 
                 for (int i = 0; i < 5; i++)
                 {
@@ -114,23 +97,23 @@ namespace GDUTSharp.Services
         }
 
         [GeneratedRegex(@"id=""pwdEncryptSalt""[^>]*?value=""([^""]*)""")]
-        private static partial Regex Login_SaltRegex();
+        protected static partial Regex Login_SaltRegex();
 
         [GeneratedRegex(@"id=""execution""[^>]*?value=""([^""]*)""")]
-        private static partial Regex Login_ExecRegex();
+        protected static partial Regex Login_ExecRegex();
 
-        public async Task<bool> Auth(SupportedServices service)
+        public async virtual Task<bool> Auth(SupportedServices service)
         {
             return await Auth(
                 service switch 
                 { 
-                    SupportedServices.JXFW => Constant.UNDER_GRADUATE_LOGIN,
-                    _ => Constant.UNDER_GRADUATE_LOGIN,
+                    SupportedServices.JXFW => GDUTConstant.UNDER_GRADUATE_LOGIN,
+                    _ => GDUTConstant.UNDER_GRADUATE_LOGIN,
                 }
             );
         }
 
-        public async Task<bool> Auth(string url)
+        public async virtual Task<bool> Auth(string url)
         {
             HttpResponseMessage? response = null;
             try
@@ -139,9 +122,9 @@ namespace GDUTSharp.Services
                 {
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
-                if (!url.StartsWith(Constant.AUTHSERVER_AUTH_Prefix))
+                if (!url.StartsWith(GDUTConstant.AUTHSERVER_AUTH_Prefix))
                 {
-                    url = Constant.AUTHSERVER_AUTH_Prefix + url;
+                    url = GDUTConstant.AUTHSERVER_AUTH_Prefix + url;
                 }
                 using var postRequest = new HttpRequestMessage(HttpMethod.Post, url);
                 response = await _client.SendAsync(postRequest);
@@ -182,7 +165,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public async Task<string?> GetTerm()
+        public async virtual Task<string?> GetTerm()
         {
             try
             {
@@ -190,8 +173,8 @@ namespace GDUTSharp.Services
                 {
                     throw new NotSupportedException("不支持除本科生以外身份的操作");
                 }
-                using var request = new HttpRequestMessage(HttpMethod.Post, Constant.UNDER_CLAZZ_TERM);
-                request.Headers.Referrer = new(Constant.UNDER_CLAZZ_TERM);
+                using var request = new HttpRequestMessage(HttpMethod.Post, GDUTConstant.UNDER_CLAZZ_TERM);
+                request.Headers.Referrer = new(GDUTConstant.UNDER_CLAZZ_TERM);
                 using var response = await _client.SendAsync(request);
                 string content = await response.Content.ReadAsStringAsync();
                 int index = content.IndexOf("selected");
@@ -206,7 +189,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public async Task<List<Lesson>?> GetLessons(string term)
+        public async virtual Task<List<Lesson>?> GetLessons(string term)
         {
             try
             {
@@ -223,7 +206,7 @@ namespace GDUTSharp.Services
                     { "sort", "zc,xq,jcdm" },
                     { "order", "asc" },
                 };
-                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_CLAZZ, Constant.UNDER_CLAZZ);
+                using HttpResponseMessage response = await this.Post(temp, GDUTConstant.UNDER_CLAZZ, GDUTConstant.UNDER_CLAZZ);
 #pragma warning disable CS8604 // Possible null reference argument.
                 return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection);
 #pragma warning restore CS8604 // Possible null reference argument.
@@ -235,7 +218,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public async Task<List<ExamSchedule>?> GetExamSchedule(string term)
+        public async virtual Task<List<ExamSchedule>?> GetExamSchedule(string term)
         {
             try
             {
@@ -251,7 +234,7 @@ namespace GDUTSharp.Services
                     { "sort", "zc,xq,jcdm2" },
                     { "order", "asc" },
                 };
-                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_EXAM, Constant.UNDER_EXAM);
+                using HttpResponseMessage response = await this.Post(temp, GDUTConstant.UNDER_EXAM, GDUTConstant.UNDER_EXAM);
 #pragma warning disable CS8604 // Possible null reference argument.
                 return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamScheduleDtoCollection);
 #pragma warning restore CS8604 // Possible null reference argument.
@@ -263,7 +246,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public async Task<List<CourseScore>?> GetCourseScore(string term)
+        public async virtual Task<List<CourseScore>?> GetCourseScore(string term)
         {
             HttpResponseMessage? response = null;
             try
@@ -281,7 +264,7 @@ namespace GDUTSharp.Services
                     { "sort", "xnxqdm" },
                     { "order", "asc" },
                 };
-                response = await this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE);
+                response = await this.Post(temp, GDUTConstant.UNDER_EXAM_SCORE, GDUTConstant.UNDER_EXAM_SCORE);
                 var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection);
                 response.Dispose();
                 if (result != null && term == "")
@@ -292,7 +275,7 @@ namespace GDUTSharp.Services
                     foreach (var item in terms)
                     {
                         temp["xnxqdm"] = Helper.TermStringToInt6Digit(item).ToString();
-                        response = await this.Post(temp, Constant.UNDER_EXAM_SCORE, Constant.UNDER_EXAM_SCORE);
+                        response = await this.Post(temp, GDUTConstant.UNDER_EXAM_SCORE, GDUTConstant.UNDER_EXAM_SCORE);
                         var tempResult = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection);
                         response.Dispose();
                         if (tempResult != null)
@@ -324,7 +307,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public async Task<List<CourseSel>?> GetCourseSelection()
+        public async virtual Task<List<CourseSel>?> GetCourseSelection()
         {
             try
             {
@@ -338,7 +321,7 @@ namespace GDUTSharp.Services
                     { "rows", "300" },
                     { "sort", "kcflmc" },
                 };
-                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_COURSE_SEL, Constant.UNDER_COURSE_SEL);
+                using HttpResponseMessage response = await this.Post(temp, GDUTConstant.UNDER_COURSE_SEL, GDUTConstant.UNDER_COURSE_SEL);
 #pragma warning disable CS8604 // Possible null reference argument.
                 return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelDtoCollection);
 #pragma warning restore CS8604 // Possible null reference argument.
@@ -350,7 +333,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public async Task<List<CourseSel>?> GetSelectedCourse()
+        public async virtual Task<List<CourseSel>?> GetSelectedCourse()
         {
             try
             {
@@ -364,7 +347,7 @@ namespace GDUTSharp.Services
                     { "rows", "300" },
                     { "sort", "kcflmc" },
                 };
-                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_COURSE_SEL_ED, Constant.UNDER_COURSE_SEL_ED);
+                using HttpResponseMessage response = await this.Post(temp, GDUTConstant.UNDER_COURSE_SEL_ED, GDUTConstant.UNDER_COURSE_SEL_ED);
                 var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListCourseSelDto);
                 if (result is null) return null;
                 else return [..result];
@@ -376,7 +359,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public async Task<List<Lesson>?> GetCourseTask(string code)
+        public async virtual Task<List<Lesson>?> GetCourseTask(string code)
         {
             try
             {
@@ -392,7 +375,7 @@ namespace GDUTSharp.Services
                     { "sort", "zc,xq,jcdm" },
                     { "order", "asc" },
                 };
-                using HttpResponseMessage response = await this.Post(temp, Constant.UNDER_COURSE_TASK, Constant.UNDER_COURSE_TASK);
+                using HttpResponseMessage response = await this.Post(temp, GDUTConstant.UNDER_COURSE_TASK, GDUTConstant.UNDER_COURSE_TASK);
                 var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLesson);
                 return result;
             }

@@ -1,6 +1,8 @@
-﻿namespace GDUTSharp.Shared.Type;
+﻿using System.Collections;
 
-public class SessionCollection
+namespace GDUTSharp.Shared.Type;
+
+public partial class SessionCollection : IEnumerable<Session>
 {
     public List<Session> Sessions = [];
 
@@ -18,9 +20,11 @@ public class SessionCollection
         return true;
     }
 
-    public static SessionCollection Default()
-    {
-        return new SessionCollection
+    public IEnumerator<Session> GetEnumerator() => Sessions.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+    public static readonly SessionCollection Default = new()
         {
             Sessions = [
                 new(new TimeOnly(8, 30), new TimeOnly(9, 15)),
@@ -37,7 +41,8 @@ public class SessionCollection
                 new(new TimeOnly(20, 10), new TimeOnly(20, 55)),
             ]
         };
-    }
+
+    public Session this[int index] => Sessions[index];
 }
 
 public struct Session(TimeOnly start, TimeOnly end)

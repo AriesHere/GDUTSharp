@@ -2,7 +2,7 @@
 
 namespace GDUTSharp.Shared.Type
 {
-    public class LoginInfo
+    public partial class LoginInfo
     {
         /// <summary>学号</summary>
         [NotNull] public required string UserName { get; set; }

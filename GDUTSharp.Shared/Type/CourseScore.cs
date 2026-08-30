@@ -1,6 +1,6 @@
 ﻿namespace GDUTSharp.Shared.Type;
 
-public class CourseScore
+public partial class CourseScore
 {
     /// <summary>课程分类</summary>
     /// <remarks>即"自然科学与工程技术类"等</remarks>

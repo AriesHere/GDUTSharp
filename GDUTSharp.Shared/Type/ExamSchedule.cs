@@ -1,6 +1,6 @@
 ﻿namespace GDUTSharp.Shared.Type;
 
-public class ExamSchedule
+public partial class ExamSchedule
 {
     /// <summary>监考老师</summary>
     public List<string> Teachers { get; set; } = [];

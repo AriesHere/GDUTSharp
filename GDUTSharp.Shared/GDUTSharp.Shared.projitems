@@ -9,7 +9,7 @@
     <Import_RootNamespace>GDUTSharp.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Constant.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GDUTConstant.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\AppJsonContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\ClassNameConverter.cs" />

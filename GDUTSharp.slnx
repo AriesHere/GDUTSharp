@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="GDUTSharp.Example/GDUTSharp.Example.csproj" Id="ef76ba5c-1e49-4b63-812e-f34c02441225" />
+  <Project Path="GDUTSharp.Extra/GDUTSharp.Extra.csproj" Id="5a0523b9-f157-493f-932f-405dc89e6e43" />
   <Project Path="GDUTSharp.Shared/GDUTSharp.Shared.shproj" Id="52f5c502-4662-4b7f-add8-71132dcc34f5" />
   <Project Path="GDUTSharp.Test/GDUTSharp.Test.csproj" Id="dc81b6da-32af-4260-8da5-6ad85ae69a14" />
   <Project Path="GDUTSharp/GDUTSharp.csproj" />

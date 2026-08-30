@@ -1,6 +1,6 @@
 ﻿namespace GDUTSharp.Shared.Type;
 
-public class CourseSel
+public partial class CourseSel
 {
     /// <summary>课程任务代码</summary>
     public string CourseCode { get; set; } = string.Empty;

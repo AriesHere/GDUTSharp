@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GDUTSharp\GDUTSharp.csproj" />
+    <ProjectReference Include="..\GDUTSharp.Extra\GDUTSharp.Extra.csproj" />
   </ItemGroup>
 
 </Project>

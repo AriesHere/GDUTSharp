@@ -1,6 +1,6 @@
 ﻿namespace GDUTSharp.Shared;
 
-public static class Constant
+public static class GDUTConstant
 {
     #region 已用
 
