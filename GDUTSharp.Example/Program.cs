@@ -2,6 +2,7 @@
 using GDUTSharp.Interfaces;
 using GDUTSharp.Services;
 using GDUTSharp.Shared.Type;
+using Ical.Net;
 using Ical.Net.CalendarComponents;  // 这两个依赖，仅在导出课程功能需要
 using Ical.Net.DataTypes;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,9 +60,12 @@ public class Program
                     // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入到 outlook 日历或 Google 日历
                     Alarm alarm = new()
                     {
-                        Trigger = new(new Duration(minutes: 15))
+                        Trigger = new(new Duration(minutes: -30)),
+                        Description = "课程",
+                        Action = AlarmAction.Display,
                     };
-                    await File.WriteAllTextAsync("path/to/file", lessons.ToCalendarString());
+                    //await File.WriteAllTextAsync("path/to/file", lessons.ToCalendarString());
+                    await File.WriteAllTextAsync("path/to/file", lessons.ToCalendarString(alarm: alarm));
                 }
             }
         }
