@@ -16,12 +16,22 @@ public static class Extensions
         ///     如果 <paramref name="startDate"/> 为 null，请确保 lesson 数据中的 Date 为有效值。
         ///     如果 <paramref name="startDate"/> 不为 null，请确保它为星期一，否则日期推断会出问题。
         /// </param>
-        public List<CalendarEvent> ToCalendarEvent(SessionCollection? sessions = null, Alarm? alarm = null, DateOnly? startDate = null, string[]? categories = null)
+        public List<CalendarEvent> ToCalendarEvent(ICalConvertContext context)
         {
             List<CalendarEvent> result = [];
-            SessionCollection s = sessions ?? SessionCollection.Default;
             bool useDate = lesson.Date is { };
-            foreach (var item in lesson.Sessions)
+
+            List<(TimeOnly, TimeOnly)> temp = [];
+            if (context.IsMergeIfContinuous)
+            {
+                var groups = lesson.Sessions.SplitIntoConsecutiveGroups();
+                foreach (var item in groups)
+                    temp.Add(new(context.Sessions[item[0] - 1].StartTime, context.Sessions[item[^1] - 1].EndTime));
+            }
+            else foreach (var item in lesson.Sessions)
+                temp.Add(new(context.Sessions[item - 1].StartTime, context.Sessions[item - 1].EndTime));
+
+            foreach (var (start, end) in temp)
             {
                 CalendarEvent c = new()
                 {
@@ -34,15 +44,15 @@ public static class Extensions
                 DateTime dtEnd;
                 if (useDate)
                 {
-                    dtStart = lesson.Date.ToDateTime(s[item - 1].StartTime);
-                    dtEnd = lesson.Date.ToDateTime(s[item - 1].EndTime);
+                    dtStart = lesson.Date.ToDateTime(start);
+                    dtEnd = lesson.Date.ToDateTime(end);
                 }
                 else
                 {
-                    if (startDate is not null)
+                    if (context.StartDate is not null)
                     {
-                        dtStart = startDate.Value.ToDateTime(s[item - 1].StartTime).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
-                        dtEnd = startDate.Value.ToDateTime(s[item - 1].EndTime).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
+                        dtStart = context.StartDate.Value.ToDateTime(start).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
+                        dtEnd = context.StartDate.Value.ToDateTime(end).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
                     }
                     else
                     {
@@ -52,9 +62,9 @@ public static class Extensions
                 c.Start = new(dtStart);
                 c.End = new(dtEnd);
 
-                if (alarm is not null)
+                if (context.Alarm is not null)
                 {
-                    c.Alarms.Add(alarm);
+                    c.Alarms.Add(context.Alarm);
                 }
                 result.Add(c);
             }
@@ -64,22 +74,41 @@ public static class Extensions
 
     extension(List<Lesson> lessonList)
     {
-        public Calendar ToCalendar(SessionCollection? sessions = null, Alarm? alarm = null, DateOnly? startDate = null, string[]? categories = null)
+        public Calendar ToCalendar(ICalConvertContext context)
         {
             Calendar result = new();
             foreach (var item in lessonList)
             {
-                item.ToCalendarEvent(sessions, alarm, startDate, categories).ForEach(result.Events.Add);
+                item.ToCalendarEvent(context).ForEach(result.Events.Add);
             }
             return result;
         }
 
-        public string? ToCalendarString(SessionCollection? sessions = null, Alarm? alarm = null, DateOnly? startDate = null, string[]? categories = null)
+        public string? ToCalendarString(ICalConvertContext context)
         {
             var serializer = new CalendarSerializer();
-            return serializer.SerializeToString(lessonList.ToCalendar(sessions, alarm, startDate, categories));
+            return serializer.SerializeToString(lessonList.ToCalendar(context));
         }
 
-        public async Task WriteAsICS(string path) => await File.WriteAllTextAsync(path, lessonList.ToCalendarString());
+        public async Task WriteAsICS(string path, ICalConvertContext context) => await File.WriteAllTextAsync(path, lessonList.ToCalendarString(context));
+    }
+
+    public class ICalConvertContext
+    {
+        public SessionCollection Sessions = SessionCollection.Default;
+
+        /// <summary>
+        /// 是否在 <see cref="Sessions"/> 连续时自动合并时间
+        /// </summary>
+        public bool IsMergeIfContinuous = true;
+
+        public Alarm? Alarm = null;
+
+        /// <summary>
+        /// 首周星期一的日期
+        /// </summary>
+        public DateOnly? StartDate = null;
+
+        public List<string> Categories = [];
     }
 }

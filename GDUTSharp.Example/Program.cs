@@ -2,8 +2,7 @@
 using GDUTSharp.Interfaces;
 using GDUTSharp.Services;
 using GDUTSharp.Shared.Type;
-using Ical.Net;
-using Ical.Net.CalendarComponents;  // 这两个依赖，仅在导出课程功能需要
+using Ical.Net;     // 这两个依赖仅在导出课程功能需要
 using Ical.Net.DataTypes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,7 +28,6 @@ public class Program
                 services.AddSingleton<ISecurityService, SecurityService>();
             })
             .Build();
-
         AppHost.RunAsync();
 
         // 这里填充学号和密码
@@ -45,28 +43,27 @@ public class Program
             // 如果学号密码正确，这两个结果都是 true
             // 自行补充学号密码错误时的处理逻辑
             var loginResult = await dataService.Login(testLoginInfo);
-            logger.LogInformation("登录结果:{Result}", loginResult);
-
             var authResult = await dataService.Auth(IDataService.SupportedServices.JXFW);
-            logger.LogInformation("认证结果:{Result}", authResult);
+            logger.LogInformation("登录结果:{Result}, 认证结果:{Result}", loginResult, authResult);
 
             // 获取学期
             var term = dataService.GetTerm().Result;
-            if (term is not null)
+            if (term is not null
+                && await dataService.GetLessons(term) is List<Lesson> lessons)
             {
-                var lessons = await dataService.GetLessons(term);
-                if (lessons is not null)
-                {
-                    // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入到 outlook 日历或 Google 日历
-                    Alarm alarm = new()
-                    {
-                        Trigger = new(new Duration(minutes: -30)),
-                        Description = "课程",
-                        Action = AlarmAction.Display,
-                    };
-                    //await File.WriteAllTextAsync("path/to/file", lessons.ToCalendarString());
-                    await File.WriteAllTextAsync("path/to/file", lessons.ToCalendarString(alarm: alarm));
-                }
+                // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入到 outlook 日历或 Google 日历
+                await File.WriteAllTextAsync("path/to/file",
+                    lessons.ToCalendarString(new Extensions.ICalConvertContext()
+                        {
+                            Alarm = new()
+                            {
+                                Trigger = new(new Duration(minutes: -30)),
+                                Description = "课程",
+                                Action = AlarmAction.Display
+                            },
+                            IsMergeIfContinuous = true,
+                        }
+                    ));
             }
         }
     }
