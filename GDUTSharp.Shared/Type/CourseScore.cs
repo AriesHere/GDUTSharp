@@ -13,7 +13,8 @@ public partial class CourseScore
     /// <remarks>即"专业基础课"等</remarks>
     public string Type { get; set; } = string.Empty;
 
-    public float Gpa { get; set; }
+    /// <summary>学分</summary>
+    public float Gp { get; set; }
 
     /// <summary>课程名称</summary>
     public string Name { get; set; } = string.Empty;
@@ -43,7 +44,7 @@ public partial class CourseScore
           - Category:{Category}
           - Term:{Term}
           - Type:{Type}
-          - Gpa:{Gpa}
+          - Gp:{Gp}
           - Name:{Name}
           - Score:{Score}
           - ExamType:{ExamType}

@@ -56,7 +56,7 @@ public class CourseScoreDto
             Category = dto.kcflmc,
             Term = dto.xnxqmc,
             Type = dto.kcdlmc,
-            Gpa = dto.cjjd,
+            Gp = dto.cjjd,
             Name = dto.kcmc,
             Score = dto.zcj,
             ExamType = dto.ksxzmc,
