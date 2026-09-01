@@ -53,7 +53,7 @@ public class Program
             {
                 // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入到 outlook 日历或 Google 日历
                 await File.WriteAllTextAsync("path/to/file",
-                    lessons.ToCalendarString(new Extensions.ICalConvertContext()
+                    lessons.ToCalendarString(new ExtraExtensions.ICalConvertContext()
                         {
                             Alarm = new()
                             {

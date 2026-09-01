@@ -13,7 +13,7 @@ public partial class CourseScore
     /// <remarks>即"专业基础课"等</remarks>
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>学分</summary>
+    /// <summary>绩点</summary>
     public float Gp { get; set; }
 
     /// <summary>课程名称</summary>

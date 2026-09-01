@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using GDUTSharp.Interfaces;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using HtmlAgilityPack;
@@ -8,8 +9,9 @@ using Ical.Net.Serialization;
 
 namespace GDUTSharp.Extra;
 
-public static class Extensions
+public static class ExtraExtensions
 {
+    // lesson
     extension(Lesson lesson)
     {
         /// <remaeks>
@@ -75,6 +77,7 @@ public static class Extensions
         }
     }
 
+    // List<Lesson>
     extension(List<Lesson> lessonList)
     {
         public Calendar ToCalendar(ICalConvertContext context)

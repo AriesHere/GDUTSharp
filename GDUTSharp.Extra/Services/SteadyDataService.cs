@@ -37,7 +37,7 @@ public class SteadyDataService(ILogger<DataService> logger, ICommonClient client
                 var doc = new HtmlDocument();
                 doc.LoadHtml(html);
                 var hiddenInputs = doc.DocumentNode.SelectNodes("//*[@id=\"pwdFromId\"]//input[@type=\"hidden\"]") // 对应原来的css选择器 #pwdFromId input[type=hidden]
-                    ?? throw new NullReferenceException("Failed to find the HTML element");
+                    ?? throw new NullReferenceException("查找 html 元素失败");
                 foreach (var input in hiddenInputs)
                 {
                     string name = input.GetAttributeValue("name", "");
