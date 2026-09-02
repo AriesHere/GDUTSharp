@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using GDUTSharp.Interfaces;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using HtmlAgilityPack;
@@ -83,20 +82,15 @@ public static class ExtraExtensions
         public Calendar ToCalendar(ICalConvertContext context)
         {
             Calendar result = new();
-            foreach (var item in lessonList)
-            {
-                item.ToCalendarEvent(context).ForEach(result.Events.Add);
-            }
+            lessonList.ForEach(l => l.ToCalendarEvent(context).ForEach(result.Events.Add));
             return result;
         }
 
-        public string? ToCalendarString(ICalConvertContext context)
-        {
-            var serializer = new CalendarSerializer();
-            return serializer.SerializeToString(lessonList.ToCalendar(context));
-        }
+        public string? ToCalendarString(ICalConvertContext context) =>
+            new CalendarSerializer().SerializeToString(lessonList.ToCalendar(context));
 
-        public async Task WriteAsICS(string path, ICalConvertContext context) => await File.WriteAllTextAsync(path, lessonList.ToCalendarString(context));
+        public async Task WriteAsICS(string path, ICalConvertContext context) =>
+            await File.WriteAllTextAsync(path, lessonList.ToCalendarString(context));
 
         /// <summary>
         /// 解析从教学服务中心导出的课程安排文件
@@ -108,6 +102,7 @@ public static class ExtraExtensions
             List<Lesson> result = [];
             SWITCH: switch (type)
             {
+                default:
                 case JXFWFileType.AutoDetect:
                     type = fs.ReadByte() switch
                     {
@@ -152,8 +147,6 @@ public static class ExtraExtensions
                         }
                     }
                     break;
-                default:
-                    break;
             }
             return result;
 
@@ -185,6 +178,55 @@ public static class ExtraExtensions
                 });
             }
         }
+    }
+
+    // ExamSchedule
+    extension(ExamSchedule schedule)
+    {
+        public CalendarEvent ToCalendarEvent(ICalConvertContext context)
+        {
+            DateTime dtStart = schedule.Date.ToDateTime(schedule.StartTime);
+            DateTime dtEnd = schedule.Date.ToDateTime(schedule.EndTime);
+            CalendarEvent c = new()
+            {
+                Summary = schedule.Name,
+                Description = $"""
+                课程名称：{schedule.Name}
+                校区：{schedule.Campus}
+                地点：{schedule.Location}
+                监考老师：{schedule.Teachers}
+                考试类别：{schedule.ExamType}
+                安排类型：{schedule.ScheduleType}
+                考试形式：{schedule.Format}
+                试卷编号：{schedule.ExamPaperNumber}
+                """,
+                Location = schedule.Location,
+                Start = new(dtStart),
+                End = new(dtEnd),
+            };
+            if (context.Alarm is not null)
+            {
+                c.Alarms.Add(context.Alarm);
+            }
+            return c;
+        }
+    }
+
+    // List<ExamSchedule>
+    extension(List<ExamSchedule> scheduleList)
+    {
+        public Calendar ToCalendar(ICalConvertContext context)
+        {
+            Calendar result = new();
+            scheduleList.ForEach(schedule => result.Events.Add(schedule.ToCalendarEvent(context)));
+            return result;
+        }
+
+        public string? ToCalendarString(ICalConvertContext context) =>
+            new CalendarSerializer().SerializeToString(scheduleList.ToCalendar(context));
+
+        public async Task WriteAsICS(string path, ICalConvertContext context) =>
+            await File.WriteAllTextAsync(path, scheduleList.ToCalendarString(context));
     }
 
     public enum JXFWFileType

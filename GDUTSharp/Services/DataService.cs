@@ -65,7 +65,7 @@ namespace GDUTSharp.Services
                     formData["username"] = loginInfo.UserName;
                     formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
                 }
-
+                
                 response = await this.Post(formData, GDUTConstant.AUTHSERVER_LOGIN_URL, GDUTConstant.AUTHSERVER_LOGIN_URL);
 
                 for (int i = 0; i < 5; i++)
@@ -207,9 +207,7 @@ namespace GDUTSharp.Services
                     { "order", "asc" },
                 };
                 using HttpResponseMessage response = await this.Post(temp, GDUTConstant.UNDER_CLAZZ, GDUTConstant.UNDER_CLAZZ);
-#pragma warning disable CS8604 // Possible null reference argument.
                 return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection);
-#pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
             {
@@ -235,9 +233,7 @@ namespace GDUTSharp.Services
                     { "order", "asc" },
                 };
                 using HttpResponseMessage response = await this.Post(temp, GDUTConstant.UNDER_EXAM, GDUTConstant.UNDER_EXAM);
-#pragma warning disable CS8604 // Possible null reference argument.
                 return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamScheduleDtoCollection);
-#pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
             {
@@ -292,9 +288,7 @@ namespace GDUTSharp.Services
                     }
                 };
                 END:
-#pragma warning disable CS8604 // Possible null reference argument.
                 return result;
-#pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
             {
@@ -322,9 +316,7 @@ namespace GDUTSharp.Services
                     { "sort", "kcflmc" },
                 };
                 using HttpResponseMessage response = await this.Post(temp, GDUTConstant.UNDER_COURSE_SEL, GDUTConstant.UNDER_COURSE_SEL);
-#pragma warning disable CS8604 // Possible null reference argument.
                 return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelDtoCollection);
-#pragma warning restore CS8604 // Possible null reference argument.
             }
             catch (Exception e)
             {

@@ -6,7 +6,7 @@ namespace GDUTSharp.Shared.Type.DTO;
 
 public class CourseSelDtoCollection : DtoCollectionBase<CourseSelDto>
 {
-    public static implicit operator List<CourseSel>(CourseSelDtoCollection collection) => [..collection];
+    public static implicit operator List<CourseSel>(CourseSelDtoCollection? collection) => collection is null ? [] : [..collection];
 }
 
 public class CourseSelDto

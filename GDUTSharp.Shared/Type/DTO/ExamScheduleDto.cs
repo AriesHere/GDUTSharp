@@ -7,7 +7,7 @@ namespace GDUTSharp.Shared.Type.DTO;
 
 public class ExamScheduleDtoCollection : DtoCollectionBase<ExamScheduleDto>
 {
-    public static implicit operator List<ExamSchedule>(ExamScheduleDtoCollection collection) => [.. collection];
+    public static implicit operator List<ExamSchedule>(ExamScheduleDtoCollection? collection) => collection is null ? [] : [.. collection];
 }
 
 /// <remarks>
@@ -72,14 +72,13 @@ public class ExamScheduleDto
 
     public static implicit operator ExamSchedule(ExamScheduleDto dto)
     {
-        return new()
+        ExamSchedule r = new()
         {
             Teachers = dto.jkteaxms,
             Date = dto.ksrq,
             Week = dto.zc,
             DayOfWeek = dto.xq,
             Sessions = dto.Sessions,
-            Time = dto.kssj,
             ExamType = dto.kslbmc,
             Campus = dto.xqmc,
             ScheduleType = dto.ksaplxmc,
@@ -88,6 +87,13 @@ public class ExamScheduleDto
             Format = dto.ksxs,
             Location = dto.kscdmc,
         };
+        var temp = dto.kssj.Split("--");
+        if (temp is not null && temp.Length == 2)
+        {
+            r.StartTime = TimeOnly.Parse(temp[0]);
+            r.EndTime = TimeOnly.Parse(temp[1]);
+        }
+        return r;
     }
 }
 

@@ -15,8 +15,9 @@ public partial class ExamSchedule
     /// <summary>占用节次</summary>
     public List<int> Sessions { get; set; } = [];
 
-    /// <summary>考试时间</summary>
-    public string Time { get; set; } = string.Empty;
+    public TimeOnly StartTime { get; set; } = TimeOnly.MinValue;
+
+    public TimeOnly EndTime { get; set; } = TimeOnly.MinValue;
 
     /// <summary>考试类别</summary>
     public string ExamType { get; set; } = string.Empty;
@@ -49,7 +50,7 @@ public partial class ExamSchedule
           - Week:{Week}
           - DayOfWeek:{DayOfWeek}
           - Sessions:{string.Join(",", Sessions)}
-          - Time:{Time}
+          - Time:{StartTime}-{EndTime}
           - ExamType:{ExamType}
           - Campus:{Campus}
           - ScheduleType:{ScheduleType}

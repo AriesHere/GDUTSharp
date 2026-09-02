@@ -10,7 +10,7 @@ namespace GDUTSharp.Shared.Type.DTO;
 /// </remarks>
 public class LessonDtoCollection : DtoCollectionBase<LessonDto>
 {
-    public static implicit operator List<Lesson>(LessonDtoCollection collection) => [.. collection];
+    public static implicit operator List<Lesson>(LessonDtoCollection? collection) => collection is null ? [] : [.. collection];
 }
 
 public class LessonDto
