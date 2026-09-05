@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
@@ -68,20 +69,20 @@ namespace GDUTSharp.Services
                 
                 response = await this.Post(formData, GDUTConstant.AUTHSERVER_LOGIN_URL, GDUTConstant.AUTHSERVER_LOGIN_URL);
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     if (response.StatusCode != HttpStatusCode.Redirect && response.StatusCode != HttpStatusCode.MovedPermanently)
                         break;
                     string? location = response.Headers.Location?.AbsoluteUri;
                     if (string.IsNullOrEmpty(location))
                         break;
-                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i, location);
+                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i + 1, location);
                     response.Dispose();
                     using var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
                     response = await _client.SendAsync(redirectRequest);
                 }
 
-                var result = response.StatusCode == HttpStatusCode.Found;
+                var result = response.StatusCode == HttpStatusCode.OK;
                 _role = result ? loginInfo.Role : null;
                 return result;
             }
@@ -102,12 +103,36 @@ namespace GDUTSharp.Services
         [GeneratedRegex(@"id=""execution""[^>]*?value=""([^""]*)""")]
         protected static partial Regex Login_ExecRegex();
 
+        public async virtual Task<bool> Logout()
+        {
+            try
+            {
+                using HttpResponseMessage response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Get, GDUTConstant.AUTHSERVER_LOGOUT_URL));
+                var r = await response.Content.ReadAsStringAsync();
+                return r.Contains("注销成功");
+            }
+            catch (CookieException e) when (e.Message.Contains("Domain") && e.Message.Contains("wisedu.com.cn"))
+            {
+                /// 预料中的异常（不过退出登录依然成功）：
+                /// 退出登录失败 System.Net.CookieException: An error occurred when parsing the Cookie header for Uri 'https://authserver.gdut.edu.cn/authserver/logout'.
+                ///        ---> System.Net.CookieException: The 'Domain'='wisedu.com.cn' part of the cookie is invalid.
+                if (_logger.IsEnabled(LogLevel.Warning)) _logger.LogWarning("预料中的异常 {Exception}", e);
+                return true;
+            }
+            catch (Exception e)
+            {
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("退出登录失败 {Exception}", e);
+                return false;
+            }
+        }
+
         public async virtual Task<bool> Auth(SupportedServices service)
         {
             return await Auth(
                 service switch 
                 { 
                     SupportedServices.JXFW => GDUTConstant.UNDER_GRADUATE_LOGIN,
+                    SupportedServices.LIBRARY => GDUTConstant.LIBRARY_LOGIN,
                     _ => GDUTConstant.UNDER_GRADUATE_LOGIN,
                 }
             );
@@ -129,17 +154,46 @@ namespace GDUTSharp.Services
                 using var postRequest = new HttpRequestMessage(HttpMethod.Post, url);
                 response = await _client.SendAsync(postRequest);
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     if (response.StatusCode != HttpStatusCode.Redirect)
                         break;
                     string? location = response.Headers.Location?.AbsoluteUri;
                     if (string.IsNullOrEmpty(location))
                         break;
-                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i, location);
+                    if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i + 1, location);
                     response.Dispose();
                     using var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
                     response = await _client.SendAsync(redirectRequest);
+                }
+
+                // TODO: 这只是权宜之计
+                if (url == GDUTConstant.AUTHSERVER_AUTH_Prefix + GDUTConstant.LIBRARY_LOGIN)
+                {
+                    var r = await response.Content.ReadAsStringAsync();
+                    int valueIndex = r.IndexOf("value=\"");
+                    int start = valueIndex + "value=\"".Length;
+                    int end = r.IndexOf('"', start);
+                    string refValue = WebUtility.HtmlDecode(r[start..end]);
+                    response.Dispose();
+                    var rq = new HttpRequestMessage(HttpMethod.Get, refValue);
+                    rq.Headers.Referrer = new(GDUTConstant.LIBRARY_LOGIN);
+                    response = await _client.SendAsync(rq);
+
+                    var r1 = await response.Content.ReadAsStringAsync();
+                    int valueIndex1 = r1.IndexOf("name=\"refer\" value=\"");
+                    int start1 = valueIndex1 + "name=\"refer\" value=\"".Length;
+                    int end1 = r1.IndexOf('"', start1);
+                    string refValue1 = WebUtility.HtmlDecode(r1[start1..end1]);
+                    response.Dispose();
+                    var rq1 = new HttpRequestMessage(HttpMethod.Get, refValue1);
+                    response = await _client.SendAsync(rq1);
+
+                    Console.WriteLine(response.Headers.Location);
+                    // 这里的 Location 形式如下 https://opac.gdut.edu.cn/#/Home?jwt=XXXXXXX&jwtHeader=jwtOpacAuth&pageType=0&navigation=1
+                    // 后面如果想要正常取得数据，需要在请求头中加入 jwtOpacAuth: XXXXXXX
+                    // 累了，需要大改
+                    return false;
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -374,6 +428,38 @@ namespace GDUTSharp.Services
             catch (Exception e)
             {
                 if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求课程任务异常。 {Exception}", e);
+                return null;
+            }
+        }
+
+        public async virtual Task<List<BorrowedBook>?> GetBorrowedBooks()
+        {
+            try
+            {
+                if (_role != Role.UNDER_GRADUATE)
+                {
+                    throw new NotSupportedException("不支持除本科生以外身份的操作");
+                }
+                var temp = new Dictionary<string, string>
+                {
+                    { "page", "1" },
+                    { "rows", "10" },
+                    //{ "sort", "normReturnDate" },
+                    //{ "order", "asc" },
+                    { "searchType", "1" },
+                    { "searchContent", "" },
+                    { "sortType", "0" },
+                    { "startDate", "null" },
+                    { "endDate", "null" }
+                };
+                using HttpResponseMessage response = await this.Post(temp, GDUTConstant.LIBRARY_LOAN_LIST, GDUTConstant.LIBRARY_LOAN_LIST);
+                Debug.WriteLine(await response.Content.ReadAsStringAsync());
+                var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListBorrowedBook);
+                return result;
+            }
+            catch (Exception e)
+            {
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求图书借阅列表异常。 {Exception}", e);
                 return null;
             }
         }

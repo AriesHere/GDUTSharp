@@ -13,6 +13,11 @@ namespace GDUTSharp.Interfaces
         /// </remarks>
         public Task<bool> Login(LoginInfo user);
 
+        /// <remarks>
+        /// 注意：即使未登录，调用本方法也会返回 true，因为统一认证中心的登出操作是幂等的
+        /// </remarks>
+        public Task<bool> Logout();
+
         /// <summary>
         /// 通过统一认证中心认证
         /// </summary>
@@ -56,9 +61,12 @@ namespace GDUTSharp.Interfaces
         /// <param name="CourseTaskCode">课程任务代码</param>
         public Task<List<Lesson>?> GetCourseTask(string CourseTaskCode);
 
+        public Task<List<BorrowedBook>?> GetBorrowedBooks();
+
         public enum SupportedServices
         {
-            JXFW,
+            JXFW,       // 教学服务系统
+            LIBRARY,    // 图书馆
         }
     }
 }

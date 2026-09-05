@@ -8,6 +8,8 @@ public static class GDUTConstant
 
     public const string AUTHSERVER_AUTH_Prefix = "https://authserver.gdut.edu.cn/authserver/login?service=";
 
+    public const string AUTHSERVER_LOGOUT_URL = "https://authserver.gdut.edu.cn/authserver/logout";
+
     // 本科生获取学期链接
     public const string UNDER_CLAZZ_TERM = "https://jxfw.gdut.edu.cn/xsksap!ksapList.action";
 
@@ -30,6 +32,10 @@ public static class GDUTConstant
 
     // 本科生课程任务
     public const string UNDER_COURSE_TASK = "https://jxfw.gdut.edu.cn/xsxklist!getJxrlDataList.action";
+
+    public const string LIBRARY_LOGIN = "https://opac.gdut.edu.cn/sso-cas/cas/index/gdut";
+
+    public const string LIBRARY_LOAN_LIST = "https://opac.gdut.edu.cn/find/loanInfo/loanList";
 
     #endregion
 
@@ -60,4 +66,7 @@ public static class GDUTConstant
 
     // 后续补充这里即可
     public const string TEACHER_EHALL_LOGIN = "https://authserver.gdut.edu.cn/";
+
+    // 图书馆图书检索  TODO
+    public const string LIBRARY_SEARCH = "https://opac.gdut.edu.cn/find/unify/search";
 }
