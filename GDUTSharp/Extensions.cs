@@ -22,8 +22,8 @@ public static class Extensions
     }
 
     // IDataService
-    // 这里是不适合放在 IDataService 接口中的扩展方法，因为它们依赖于接口的实现类的具体行为
-    extension(IDataService dataService)
+    // 这里是不适合放在 IJXFWService 接口中的扩展方法，因为它们依赖于接口的实现类的具体行为
+    extension(IJXFWService dataService)
     {
         /// <summary>
         /// 获取指定年份的学分绩点和学业成绩平均分，注意检查两个学期的课程成绩是否都获取成功（即 term1Count 和 term2Count 均正常）

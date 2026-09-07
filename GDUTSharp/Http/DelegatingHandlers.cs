@@ -36,16 +36,4 @@ namespace GDUTSharp.Http
             }
         }
     }
-
-    public class ConcurrencyHandler(IOptions<HttpOptions> options) : DelegatingHandler
-    {
-        private readonly SemaphoreSlim _semaphore = new(options.Value.MaxRequests, options.Value.MaxRequests);
-
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-        {
-            await _semaphore.WaitAsync(ct);
-            try { return await base.SendAsync(request, ct); }
-            finally { _semaphore.Release(); }
-        }
-    }
 }

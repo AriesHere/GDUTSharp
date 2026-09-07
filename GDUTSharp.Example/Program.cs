@@ -23,8 +23,8 @@ public class Program
                 // 使用此方法以自动完成对CommonClient的所有配置
                 services.AddCommonClient(context.Configuration);
 
-                services.AddScoped<ICookieService, CookieService>();
-                services.AddScoped<IDataService, DataService>();
+                services.AddScoped<ILibraryService, LibraryService>();
+                services.AddScoped<IJXFWService, JXFWService>();
                 services.AddSingleton<ISecurityService, SecurityService>();
             })
             .Build();
