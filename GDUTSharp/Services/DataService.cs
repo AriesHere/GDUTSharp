@@ -7,7 +7,6 @@ using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.Logging;
-using static GDUTSharp.Interfaces.IDataService;
 
 namespace GDUTSharp.Services
 {

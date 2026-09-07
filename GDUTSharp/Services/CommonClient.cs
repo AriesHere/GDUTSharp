@@ -14,7 +14,7 @@ namespace GDUTSharp.Services
         private readonly HttpClient _httpClient = httpClient;
         private readonly ICookieService _cookieService = cookieService;
 
-        public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
+        public async Task<HttpResponseMessage> Send(HttpRequestMessage request, CancellationToken cancellationToken = default)
             => await SendWithCookiesAsync(request, cancellationToken);
         
         private async Task<HttpResponseMessage> SendWithCookiesAsync(
@@ -56,6 +56,23 @@ namespace GDUTSharp.Services
                 };
                 throw new HttpRequestException(null, null, response.StatusCode);
             }
+        }
+
+        public HttpRequestMessage CreateRequest(HttpMethod method, string url, Dictionary<string, string> content, string? referer = null)
+        {
+            var c = new FormUrlEncodedContent(content);
+            var request = new HttpRequestMessage(method, url)
+            {
+                Content = c
+            };
+            if (referer != null) request.Headers.Referrer = new(referer);
+            return request;
+        }
+
+        public void DisposeRequest(HttpRequestMessage request)
+        {
+            request.Content?.Dispose();
+            request.Dispose();
         }
     }
 
@@ -99,6 +116,6 @@ namespace GDUTSharp.Services
         public int OverallTimeoutMilliseconds { get; set; } = 30000;
         public int MaxRetry { get; set; } = 3;
         public int MaxRequests { get; set; } = 1024;
-        public int MaxLogLength { get; set; } = 512;
+        public int MaxLogLength { get; set; } = 1024;
     }
 }
