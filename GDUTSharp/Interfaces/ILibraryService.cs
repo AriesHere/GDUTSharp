@@ -7,5 +7,7 @@ namespace GDUTSharp.Interfaces;
 /// </summary>
 public interface ILibraryService
 {
+    public Task<bool> Login(LoginInfo? loginInfo = null);
+
     public Task<List<BorrowedBook>?> GetBorrowedBooks();
 }

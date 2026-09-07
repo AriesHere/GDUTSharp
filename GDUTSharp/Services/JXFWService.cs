@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
@@ -12,6 +14,85 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, ISec
     protected readonly ILogger<JXFWService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly ISecurityService _security = security;
+
+    public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
+    {
+        HttpResponseMessage? response = null;
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, GDUTConstant.AUTHSERVER_AUTH_Prefix + GDUTConstant.UNDER_GRADUATE_LOGIN);
+            response = await _client.SendAsync(request);
+
+            // 需要登录
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                if (loginInfo is null)
+                {
+                    return false;
+                }
+                else
+                {
+                    if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在登录并认证");
+                    var formData = new Dictionary<string, string>();
+                    string pwdEncryptSalt = string.Empty;
+                    string html = await response.Content.ReadAsStringAsync();
+                    response.Dispose();
+
+                    // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这
+                    // 样，请使用 GDUTSharp.Extra.SteadyDataService 中的 Login 方法
+                    Match saltMatch = Helper.Login_SaltRegex().Match(html);
+                    pwdEncryptSalt = saltMatch.Success ? saltMatch.Groups[1].Value : "";
+                    Match execMatch = Helper.Login_ExecRegex().Match(html);
+                    string execution = execMatch.Success ? execMatch.Groups[1].Value : "";
+                    formData["_eventId"] = "submit";
+                    formData["cllt"] = "userNameLogin";
+                    formData["dllt"] = "generalLogin";
+                    formData["lt"] = "";
+                    formData["execution"] = execution;
+                    formData[""] = pwdEncryptSalt;
+                    formData["username"] = loginInfo.UserName;
+                    formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
+                    
+                    using var request2 = ICommonClient.CreateRequest(
+                        HttpMethod.Post,
+                        GDUTConstant.AUTHSERVER_AUTH_Prefix + GDUTConstant.UNDER_GRADUATE_LOGIN,
+                        formData,
+                        GDUTConstant.UNDER_GRADUATE_LOGIN);
+                    response = await _client.SendAsync(request2);
+                }
+            }
+            else
+            {
+                if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在认证");
+            }
+
+            for (int i = 0; i < 5; i++)
+            {
+                if (response.StatusCode != HttpStatusCode.Redirect && response.StatusCode != HttpStatusCode.MovedPermanently)
+                    break;
+                string? location = response.Headers.Location?.AbsoluteUri;
+                if (string.IsNullOrEmpty(location))
+                    break;
+                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i + 1, location);
+                response.Dispose();
+                using var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
+                response = await _client.SendAsync(redirectRequest);
+            }
+
+            using var reader = new StreamReader(response.Content.ReadAsStream());
+            reader.ReadLine();  // skip
+            return reader.ReadLine()?.StartsWith("<!-- 移动端 -->") == false;
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证异常。 {Exception}", e);
+            return false;
+        }
+        finally
+        {
+            response?.Dispose();
+        }
+    }
 
     public async virtual Task<string?> GetTerm()
     {

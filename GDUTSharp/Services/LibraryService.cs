@@ -8,10 +8,18 @@ using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
+/// <remarks>
+/// 尚未完成
+/// </remarks>
 public class LibraryService(ILogger<LibraryService> logger, ICommonClient client) : ILibraryService
 {
     protected readonly ILogger<LibraryService> _logger = logger;
     protected readonly ICommonClient _client = client;
+
+    public Task<bool> Login(LoginInfo? loginInfo = null)
+    {
+        throw new NotImplementedException();
+    }
 
     public async virtual Task<List<BorrowedBook>?> GetBorrowedBooks()
     {

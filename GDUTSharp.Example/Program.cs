@@ -37,32 +37,29 @@ public class Program
         using (var scope = sc.CreateScope())
         {
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            var dataService = scope.ServiceProvider.GetRequiredService<IDataService>();
+            var jxfw = scope.ServiceProvider.GetRequiredService<IJXFWService>();
 
-            // 先登录，再认证
-            // 如果学号密码正确，这两个结果都是 true
             // 自行补充学号密码错误时的处理逻辑
-            var loginResult = await dataService.Login(testLoginInfo);
-            var authResult = await dataService.Auth(IDataService.SupportedServices.JXFW);
-            logger.LogInformation("登录结果:{Result}, 认证结果:{Result}", loginResult, authResult);
+            var loginResult = await jxfw.Login(testLoginInfo);
+            logger.LogInformation("登录结果:{Result}", loginResult);
 
             // 获取学期
-            var term = dataService.GetTerm().Result;
+            var term = jxfw.GetTerm().Result;
             if (term is not null
-                && await dataService.GetLessons(term) is List<Lesson> lessons)
+                && await jxfw.GetLessons(term) is List<Lesson> lessons)
             {
                 // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入到 outlook 日历或 Google 日历
                 await File.WriteAllTextAsync("path/to/file",
                     lessons.ToCalendarString(new ExtraExtensions.ICalConvertContext()
+                    {
+                        Alarm = new()
                         {
-                            Alarm = new()
-                            {
-                                Trigger = new(new Duration(minutes: -30)),
-                                Description = "课程",
-                                Action = AlarmAction.Display
-                            },
-                            IsMergeIfContinuous = true,
-                        }
+                            Trigger = new(new Duration(minutes: -30)),
+                            Description = "课程",
+                            Action = AlarmAction.Display
+                        },
+                        IsMergeIfContinuous = true,
+                    }
                     ));
             }
         }

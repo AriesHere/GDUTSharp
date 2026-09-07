@@ -7,6 +7,8 @@ namespace GDUTSharp.Interfaces;
 /// </summary>
 public interface IJXFWService
 {
+    public Task<bool> Login(LoginInfo? loginInfo = null);
+
     /// <summary>
     /// 获取学期信息
     /// </summary>

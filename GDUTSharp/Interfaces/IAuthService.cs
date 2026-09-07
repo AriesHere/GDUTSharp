@@ -2,11 +2,14 @@
 
 namespace GDUTSharp.Interfaces;
 
+/// <summary>
+/// 统一认证中心认证服务接口
+/// </summary>
+/// <remarks>
+/// 仅支持统一认证中心认证的系统可以使用本接口进行认证。
+/// </remarks>
 public interface IAuthService
 {
-    /// <summary>
-    /// 统一认证中心登录，必须先后执行 <see cref="Login(LoginInfo)"/> 和 <see cref="Auth(string)"/> 之后才能进行其它操作。
-    /// </summary>
     /// <remarks>
     /// 返回 ture 即表示登录成功。
     /// 对于同一用户，无需反复登录。对于同一用户在同一系统的操作，无需反复认证。

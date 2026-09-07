@@ -95,22 +95,21 @@ public static class ExtraExtensions
         /// <summary>
         /// 解析从教学服务中心导出的课程安排文件
         /// </summary>
-        public static List<Lesson> Read(string path, JXFWFileType type = JXFWFileType.AutoDetect)
+        public static List<Lesson> Read(Stream stream, JXFWFileType type = JXFWFileType.AutoDetect)
         {
-            using FileStream fs = new(path, FileMode.Open);
-            using StreamReader reader = new(fs);
+            using StreamReader reader = new(stream);
             List<Lesson> result = [];
             SWITCH: switch (type)
             {
                 default:
                 case JXFWFileType.AutoDetect:
-                    type = fs.ReadByte() switch
+                    type = stream.ReadByte() switch
                     {
                         '\"' => JXFWFileType.XLS,
                         '<' => JXFWFileType.CSV,
                         _ => throw new FileLoadException("Could not detect the file type."),
                     };
-                    fs.Seek(0, SeekOrigin.Begin);
+                    stream.Seek(0, SeekOrigin.Begin);
                     goto SWITCH;
                 case JXFWFileType.XLS:
                 case JXFWFileType.DOC:
@@ -128,7 +127,7 @@ public static class ExtraExtensions
                 case JXFWFileType.CSV:
                 case JXFWFileType.TEXT:
                     HtmlDocument doc = new();
-                    doc.Load(fs);
+                    doc.Load(stream);
                     var trNodes = doc.DocumentNode.SelectNodes("//tr");
                     if (trNodes != null)
                     {
