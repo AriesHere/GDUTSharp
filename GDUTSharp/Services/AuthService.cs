@@ -30,8 +30,6 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
             }
             using var postRequest = new HttpRequestMessage(HttpMethod.Post, url);
             response = await _client.SendAsync(postRequest);
-            _logger.LogError("状态码：\n{Content}", response.StatusCode);
-            _logger.LogError("内容：\n{Content}", response.Content.ReadAsStringAsync().Result.Length);
 
             for (int i = 0; i < 10; i++)
             {

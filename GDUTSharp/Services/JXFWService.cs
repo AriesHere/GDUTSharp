@@ -23,9 +23,9 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, ISec
             using var request = new HttpRequestMessage(HttpMethod.Post, GDUTConstant.AUTHSERVER_AUTH_Prefix + GDUTConstant.UNDER_GRADUATE_LOGIN);
             response = await _client.SendAsync(request);
 
-            // 需要登录
             if (response.StatusCode == HttpStatusCode.OK)
             {
+                // 需要登录
                 if (loginInfo is null)
                 {
                     return false;
