@@ -29,4 +29,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Type\Sessions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\User.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" />
+  </ItemGroup>
 </Project>

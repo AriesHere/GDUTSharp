@@ -43,7 +43,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                     response.Dispose();
 
                     // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这
-                    // 样，请使用 GDUTSharp.Extra.SteadyDataService 中的 Login 方法
+                    // 样，请使用 GDUTSharp.Extra.SteadyAuthService 中的 LoginAndAuth 方法
                     Match saltMatch = Helper.Login_SaltRegex().Match(html);
                     pwdEncryptSalt = saltMatch.Success ? saltMatch.Groups[1].Value : "";
                     Match execMatch = Helper.Login_ExecRegex().Match(html);
