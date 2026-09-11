@@ -7,12 +7,11 @@ using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
-public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAuthService authService, ISecurityService security) : IJXFWService
+public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAuthService authService) : IJXFWService
 {
     protected readonly ILogger<JXFWService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
-    protected readonly ISecurityService _security = security;
 
     public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
     {

@@ -1,5 +1,7 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
@@ -8,23 +10,18 @@ using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
-/// <remarks>
-/// 尚未完成
-/// </remarks>
-public class LibraryService(ILogger<LibraryService> logger, ICommonClient client, IAuthService authService, ISecurityService security) : ILibraryService
+public class LibraryService(ILogger<LibraryService> logger, ICommonClient client, IAuthService authService) : ILibraryService
 {
     protected readonly ILogger<LibraryService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
-    protected readonly ISecurityService _security = security;
-    protected string _jwtOpacAuth = string.Empty;
 
     public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
     {
         HttpResponseMessage? response = null;
         try
         {
-            response = await _authService.LoginAndAuth(IAuthService.SupportedServices.JXFW, loginInfo);
+            response = await _authService.LoginAndAuth(IAuthService.SupportedServices.LIBRARY, loginInfo);
             if (response is null) return false;
 
             using var reader = new StreamReader(response.Content.ReadAsStream());
@@ -35,7 +32,6 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
                 return false;
             }
 
-            // 登录成功，获取 jwtOpacAuth
             var r = await response.Content.ReadAsStringAsync();
             response.Dispose();
             int valueIndex = r.IndexOf("value=\"");
@@ -53,32 +49,8 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
             end = r.IndexOf('"', start);
             string refValue1 = WebUtility.HtmlDecode(r[start..end]);
             var rq1 = new HttpRequestMessage(HttpMethod.Get, refValue1);
-            response = await _client.SendAsync(rq1);
+            await _client.SendAsync(rq1);   // 无需知道其内容
 
-            r = await response.Content.ReadAsStringAsync();
-            response.Dispose();
-            var l = response.Headers.Location?.AbsoluteUri;
-            start = l?.IndexOf("jwt=") + "jwt=".Length ?? -1;
-            end = l?.IndexOf("&jwtHeader") ?? -1;
-            _jwtOpacAuth = l?[start..end] ?? string.Empty;
-
-            // [尚未验证]
-            // 后面如果想要正常取得数据，需要在请求头中加入
-            // jwtOpacAuth: XXXXXXX
-            // 并添加 Cookie: jwt=XXXXXXX 和 jwtHeader=jwtOpacAuth
-
-            Cookie c = new("jwt", _jwtOpacAuth, null, "gdut.edu.cn");
-            Cookie c1 = new("jwtHeader", "jwtOpacAuth", null, "gdut.edu.cn");
-            _client.CookieContainer.Add(c);
-            _client.CookieContainer.Add(c1);
-
-            var rq2 = new HttpRequestMessage(HttpMethod.Get, l);
-            response = await _client.SendAsync(rq2);
-            rq2.Dispose();
-            r = await response.Content.ReadAsStringAsync();
-            response.Dispose();
-
-            _client.CookieContainer.SetCookies(new Uri("https://opac.gdut.edu.cn"), "_passport_login=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=opac.gdut.edu.cn");
             return true;
         }
         catch (Exception e)
@@ -96,27 +68,24 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
+            var requestContent = """
+                {
+                    "page": 1,
+                    "rows": 10,
+                    "searchType": 1,
+                    "searchContent": "",
+                    "sortType": 0,
+                    "startDate": null,
+                    "endDate": null
+                }
+                """;
+            using var request = new HttpRequestMessage(HttpMethod.Post, GDUTConstant.LIBRARY_LOAN_LIST)
             {
-                { "page", "1" },
-                { "rows", "10" },
-                //{ "sort", "normReturnDate" },
-                //{ "order", "asc" },
-                { "searchType", "1" },
-                { "searchContent", "" },
-                { "sortType", "0" },
-                { "startDate", "null" },
-                { "endDate", "null" }
+                Content = new StringContent(requestContent, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
             };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.LIBRARY_LOAN_LIST, requestContent, GDUTConstant.LIBRARY_LOAN_LIST);
-            request.Headers.Add("jwtOpacAuth", _jwtOpacAuth);
-            request.Headers.Add("groupCode", "800555");
-            request.Headers.Add("Host", "opac.gdut.edu.cn");
             using HttpResponseMessage response = await _client.SendAsync(request);
-            // 待解决的问题：这里返回内容始终为
-            // {"success":false,"message":"系统访问中断，请稍后再试！","errCode":9999,"errorCode":null,"data":null}
-            // 无法取得数据
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListBorrowedBook);
+            _logger.LogCritical("{0}", await response.Content.ReadAsStringAsync());
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.BorrowedBookDtoCollection);
             return result;
         }
         catch (Exception e)
