@@ -20,12 +20,12 @@ public class Program
         AppHost = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                // 使用此方法以自动完成对CommonClient的所有配置
-                services.AddCommonClient(context.Configuration);
-
+                services.AddScoped<IAuthService, AuthService>();
                 services.AddScoped<ILibraryService, LibraryService>();
                 services.AddScoped<IJXFWService, JXFWService>();
                 services.AddSingleton<ISecurityService, SecurityService>();
+                // 使用此方法以自动完成对CommonClient的所有配置
+                services.AddCommonClient(context.Configuration);
             })
             .Build();
         AppHost.RunAsync();

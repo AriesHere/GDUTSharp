@@ -6,9 +6,12 @@ public static class GDUTConstant
 
     public const string AUTHSERVER_LOGIN_URL = "https://authserver.gdut.edu.cn/authserver/login?type=userNameLogin";
 
-    public const string AUTHSERVER_AUTH_Prefix = "https://authserver.gdut.edu.cn/authserver/login?service=";
+    public const string AUTHSERVER_AUTH_PREFIX = "https://authserver.gdut.edu.cn/authserver/login?service=";
 
     public const string AUTHSERVER_LOGOUT_URL = "https://authserver.gdut.edu.cn/authserver/logout";
+
+    /// <remarks>需要在末尾添加学号</remarks>
+    public const string AUTHSERVER_CHECK_CAPTCHA_PREFIX = "https://authserver.gdut.edu.cn/authserver/checkNeedCaptcha.htl?username=";
 
     // 本科生获取学期链接
     public const string UNDER_CLAZZ_TERM = "https://jxfw.gdut.edu.cn/xsksap!ksapList.action";

@@ -1,8 +1,12 @@
-﻿namespace GDUTSharp.Interfaces;
+﻿using System.Net;
+
+namespace GDUTSharp.Interfaces;
 
 public interface ICommonClient
 {
     public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default);
+
+    public CookieContainer CookieContainer { get; }
 
     public static HttpRequestMessage CreateRequest(HttpMethod method, string url, Dictionary<string, string>? content = null, string? referer = null)
     {

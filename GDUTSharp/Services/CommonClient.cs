@@ -1,20 +1,45 @@
-﻿using GDUTSharp.Http;
+﻿using System.Net;
+using GDUTSharp.Http;
 using GDUTSharp.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace GDUTSharp.Services
 {
-    public class CommonClient(HttpClient httpClient, SemaphoreSlim semaphoreSlim) : ICommonClient
+    public class CommonClient(ILogger<CommonClient> logger, HttpClient httpClient, SemaphoreSlim semaphoreSlim) : ICommonClient
     {
-        private readonly HttpClient _httpClient = httpClient;
-        private readonly SemaphoreSlim _semaphore = semaphoreSlim;
+        protected readonly ILogger<CommonClient> _logger = logger;
+        protected readonly HttpClient _httpClient = httpClient;
+        protected readonly SemaphoreSlim _semaphore = semaphoreSlim;
 
-        public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
+        public CookieContainer CookieContainer { get; } = new();
+
+        public async virtual Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
-            try { return await _httpClient.SendAsync(request, cancellationToken); }
+            try
+            {
+                var cookieHeader = CookieContainer.GetCookieHeader(request.RequestUri!);
+                if (!string.IsNullOrEmpty(cookieHeader)) request.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (response.Headers.TryGetValues("Set-Cookie", out var setCookieValues))
+                {
+                    foreach (var cookieValue in setCookieValues)
+                    {
+                        try
+                        {
+                            CookieContainer.SetCookies(request.RequestUri!, cookieValue);
+                        }
+                        catch (Exception ex) when (ex is CookieException or ArgumentException)
+                        {
+                            if (_logger.IsEnabled(LogLevel.Warning)) _logger.LogWarning(ex, "忽略非法 Set-Cookie: {Cookie}", cookieValue);
+                        }
+                    }
+                }
+                return response;
+            }
             finally { _semaphore.Release(); }
         }
     }

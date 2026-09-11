@@ -1,7 +1,5 @@
-﻿using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
@@ -13,76 +11,21 @@ namespace GDUTSharp.Services;
 /// <remarks>
 /// 尚未完成
 /// </remarks>
-public class LibraryService(ILogger<LibraryService> logger, ICommonClient client, ISecurityService security) : ILibraryService
+public class LibraryService(ILogger<LibraryService> logger, ICommonClient client, IAuthService authService, ISecurityService security) : ILibraryService
 {
     protected readonly ILogger<LibraryService> _logger = logger;
     protected readonly ICommonClient _client = client;
+    protected readonly IAuthService _authService = authService;
     protected readonly ISecurityService _security = security;
     protected string _jwtOpacAuth = string.Empty;
 
-    public async Task<bool> Login(LoginInfo? loginInfo = null)
+    public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
     {
         HttpResponseMessage? response = null;
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, GDUTConstant.AUTHSERVER_AUTH_Prefix + GDUTConstant.LIBRARY_LOGIN);
-            response = await _client.SendAsync(request);
-
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                // 需要登录
-                if (loginInfo is null)
-                {
-                    return false;
-                }
-                else
-                {
-                    if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在登录并认证");
-                    var formData = new Dictionary<string, string>();
-                    string pwdEncryptSalt = string.Empty;
-                    string html = await response.Content.ReadAsStringAsync();
-                    response.Dispose();
-
-                    // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这
-                    // 样，请使用 GDUTSharp.Extra.SteadyDataService 中的 Login 方法
-                    Match saltMatch = Helper.Login_SaltRegex().Match(html);
-                    pwdEncryptSalt = saltMatch.Success ? saltMatch.Groups[1].Value : "";
-                    Match execMatch = Helper.Login_ExecRegex().Match(html);
-                    string execution = execMatch.Success ? execMatch.Groups[1].Value : "";
-                    formData["_eventId"] = "submit";
-                    formData["cllt"] = "userNameLogin";
-                    formData["dllt"] = "generalLogin";
-                    formData["lt"] = "";
-                    formData["execution"] = execution;
-                    formData[""] = pwdEncryptSalt;
-                    formData["username"] = loginInfo.UserName;
-                    formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
-
-                    using var request2 = ICommonClient.CreateRequest(
-                        HttpMethod.Post,
-                        GDUTConstant.AUTHSERVER_AUTH_Prefix + GDUTConstant.LIBRARY_LOGIN,
-                        formData,
-                        GDUTConstant.LIBRARY_LOGIN);
-                    response = await _client.SendAsync(request2);
-                }
-            }
-            else
-            {
-                if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在认证");
-            }
-
-            for (int i = 0; i < 5; i++)
-            {
-                if (response.StatusCode != HttpStatusCode.Redirect && response.StatusCode != HttpStatusCode.MovedPermanently)
-                    break;
-                string? location = response.Headers.Location?.AbsoluteUri;
-                if (string.IsNullOrEmpty(location))
-                    break;
-                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i + 1, location);
-                response.Dispose();
-                using var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
-                response = await _client.SendAsync(redirectRequest);
-            }
+            response = await _authService.LoginAndAuth(IAuthService.SupportedServices.JXFW, loginInfo);
+            if (response is null) return false;
 
             using var reader = new StreamReader(response.Content.ReadAsStream());
             reader.ReadLine();  // skip
@@ -113,15 +56,29 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
             response = await _client.SendAsync(rq1);
 
             r = await response.Content.ReadAsStringAsync();
+            response.Dispose();
             var l = response.Headers.Location?.AbsoluteUri;
             start = l?.IndexOf("jwt=") + "jwt=".Length ?? -1;
             end = l?.IndexOf("&jwtHeader") ?? -1;
-            string _jwtOpacAuth = l?[start..end] ?? string.Empty;
+            _jwtOpacAuth = l?[start..end] ?? string.Empty;
+
             // [尚未验证]
             // 后面如果想要正常取得数据，需要在请求头中加入
             // jwtOpacAuth: XXXXXXX
             // 并添加 Cookie: jwt=XXXXXXX 和 jwtHeader=jwtOpacAuth
 
+            Cookie c = new("jwt", _jwtOpacAuth, null, "gdut.edu.cn");
+            Cookie c1 = new("jwtHeader", "jwtOpacAuth", null, "gdut.edu.cn");
+            _client.CookieContainer.Add(c);
+            _client.CookieContainer.Add(c1);
+
+            var rq2 = new HttpRequestMessage(HttpMethod.Get, l);
+            response = await _client.SendAsync(rq2);
+            rq2.Dispose();
+            r = await response.Content.ReadAsStringAsync();
+            response.Dispose();
+
+            _client.CookieContainer.SetCookies(new Uri("https://opac.gdut.edu.cn"), "_passport_login=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=opac.gdut.edu.cn");
             return true;
         }
         catch (Exception e)
@@ -152,8 +109,13 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
                 { "endDate", "null" }
             };
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.LIBRARY_LOAN_LIST, requestContent, GDUTConstant.LIBRARY_LOAN_LIST);
+            request.Headers.Add("jwtOpacAuth", _jwtOpacAuth);
+            request.Headers.Add("groupCode", "800555");
+            request.Headers.Add("Host", "opac.gdut.edu.cn");
             using HttpResponseMessage response = await _client.SendAsync(request);
-            Debug.WriteLine(await response.Content.ReadAsStringAsync());
+            // 待解决的问题：这里返回内容始终为
+            // {"success":false,"message":"系统访问中断，请稍后再试！","errCode":9999,"errorCode":null,"data":null}
+            // 无法取得数据
             var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListBorrowedBook);
             return result;
         }
