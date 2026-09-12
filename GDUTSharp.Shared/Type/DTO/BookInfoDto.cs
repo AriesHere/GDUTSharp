@@ -1,4 +1,17 @@
-﻿namespace GDUTSharp.Shared.Type.DTO;
+﻿using System.Text.Json.Serialization;
+
+namespace GDUTSharp.Shared.Type.DTO;
+
+/// TODO: 从 https://opac.gdut.edu.cn/#/searchList/bookDetails/{recordId} 获取详细信息
+/// 
+/// 当前分析结果：
+/// 
+/// 从 https://opac.gdut.edu.cn/find/searchResultDetail/getDetail?recordId={recordId}
+/// 获取图书信息（GET），其中 data -> link 是用 isbn 在各大网站中进行搜索，data -> baseMarcInfoDto -> auther
+/// 是一个 html 元素，建议从 data -> baseMarcInfoDto -> cleanAuthor 而不是此处获取作者信息
+/// 
+/// 而馆藏信息则需要从 https://opac.gdut.edu.cn/find/physical/groupitems 中获取（POST）
+/// 请求 {"page":1,"rows":10,"entrance":null,"recordId":"{recordId}","isUnify":true,"sortType":0,"callNo":""}
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -7,9 +20,28 @@
 /// <code>
 /// {
 ///     "success": true,
-///     "message": "操作成功",
 ///     "errCode": 200,
-///     "errorCode": null,
+///     "data": {
+///         "title": "XXX",
+///         "author": "XXX",
+///         // 以下省略
+///     }
+/// }
+/// </code>
+/// </remarks>
+public class DailyRecommandDtoCollection
+{
+    public BookInfoDto data { get; set; } = new();
+
+    public static implicit operator BookInfo(DailyRecommandDtoCollection collection) => collection.data;
+}
+
+/// <remarks>
+/// 原 json 摘要：
+/// <code>
+/// {
+///     "success": true,
+///     "errCode": 200,
 ///     "data": {
 ///         "searchResult": [
 ///             {
@@ -28,20 +60,23 @@ public class BorrowedBookDtoCollection
 {
     public BorrowedBookDtoData data { get; set; } = new();
 
-    public static implicit operator List<BorrowedBook>(BorrowedBookDtoCollection? collection) => collection is null ?[] : [.. collection.data.searchResult];
+    public static implicit operator List<BookInfo>(BorrowedBookDtoCollection? collection) => collection is null ?[] : [.. collection.data.searchResult];
 }
 
 public class BorrowedBookDtoData
 {
-    public List<BorrowedBookDto> searchResult { get; set; } = [];
+    public List<BookInfoDto> searchResult { get; set; } = [];
 
     public int loanNum { get; set; } = 0;
 
     public int numFound { get; set; } = 0;
 }
 
-public class BorrowedBookDto
+public class BookInfoDto
 {
+    /// <remarks>查询图书详细信息主要依靠它</remarks>
+    public int recordId { get; set; } = 0;
+
     public string title { get; set; } = string.Empty;
 
     public string author { get; set; } = string.Empty;
@@ -73,22 +108,24 @@ public class BorrowedBookDto
     /// <summary>索书号</summary>
     public string callNo { get; set; } = string.Empty;
 
-    public static implicit operator BorrowedBook(BorrowedBookDto dto)
+    public static implicit operator BookInfo(BookInfoDto dto)
     {
-        return new BorrowedBook
+        var r = new BookInfo
         {
+            RecordId = dto.recordId,
             Title = dto.title,
             Author = dto.author,
             Publisher = dto.publisher,
             ISBN = dto.isbn,
             PublishYear = dto.publishYear,
-            LoanDate = DateOnly.Parse(dto.loanDate),
-            NormReturnDate = DateOnly.Parse(dto.normReturnDate),
             LocationName = dto.locationName,
             Barcode = dto.barcode,
             PropNo = dto.propNo,
             Index = dto.callNo
         };
+        if (!string.IsNullOrWhiteSpace(dto.loanDate)) r.LoanDate = DateOnly.Parse(dto.loanDate);
+        if (!string.IsNullOrWhiteSpace(dto.normReturnDate)) r.NormReturnDate = DateOnly.Parse(dto.normReturnDate);
+        return r;
     }
 }
 

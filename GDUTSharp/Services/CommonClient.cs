@@ -70,6 +70,7 @@ namespace GDUTSharp.Services
                     {
                         MaxConnectionsPerServer = options.MaxConnectionsPerServer,
                         PooledConnectionIdleTimeout = TimeSpan.FromMilliseconds(options.PooledConnectionIdleTimeoutMilliseconds),
+                        // 请勿自动重定向，部分功能在自动重定向时会发生错误
                         AllowAutoRedirect = false,
                         UseCookies = true,
                     };

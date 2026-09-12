@@ -25,7 +25,7 @@ public interface IJXFWService
     public Task<List<ExamSchedule>?> GetExamSchedule(string term);
 
     /// <summary>
-    /// 获取考试成绩信息
+    /// 获取课程成绩信息
     /// </summary>
     public Task<List<CourseScore>?> GetCourseScore(string term);
 

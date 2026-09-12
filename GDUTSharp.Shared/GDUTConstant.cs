@@ -2,45 +2,61 @@
 
 public static class GDUTConstant
 {
-    #region 已用
+    #region 统一认证中心
 
-    public const string AUTHSERVER_LOGIN_URL = "https://authserver.gdut.edu.cn/authserver/login?type=userNameLogin";
+    public const string AUTHSERVER_LOGIN = "https://authserver.gdut.edu.cn/authserver/login?type=userNameLogin";
 
     public const string AUTHSERVER_AUTH_PREFIX = "https://authserver.gdut.edu.cn/authserver/login?service=";
 
-    public const string AUTHSERVER_LOGOUT_URL = "https://authserver.gdut.edu.cn/authserver/logout";
+    public const string AUTHSERVER_LOGOUT = "https://authserver.gdut.edu.cn/authserver/logout";
 
     /// <remarks>需要在末尾添加学号</remarks>
     public const string AUTHSERVER_CHECK_CAPTCHA_PREFIX = "https://authserver.gdut.edu.cn/authserver/checkNeedCaptcha.htl?username=";
 
-    // 本科生获取学期链接
-    public const string UNDER_CLAZZ_TERM = "https://jxfw.gdut.edu.cn/xsksap!ksapList.action";
+    #endregion
 
-    public const string UNDER_CLAZZ = "https://jxfw.gdut.edu.cn/xsgrkbcx!getDataList.action";
-    
-    // 本科生考试安排
-    public const string UNDER_EXAM = "https://jxfw.gdut.edu.cn/xsksap!getDataList.action";
+    #region 教学服务系统（本科生）
 
-    // 本科生获得成绩接口
-    public const string UNDER_EXAM_SCORE = "https://jxfw.gdut.edu.cn/xskccjxx!getDataList.action";
+    /// <summary>本科生获取学期代码</summary>
+    public const string UNDER_TERM = "https://jxfw.gdut.edu.cn/xsksap!ksapList.action";
 
-    // 本科生教学服务系统登录链接
+    /// <summary>本科生获取课程安排</summary>
+    public const string UNDER_LESSONS = "https://jxfw.gdut.edu.cn/xsgrkbcx!getDataList.action";
+
+    /// <summary>本科生获取考试安排</summary>
+    public const string UNDER_EXAM_SCHEDULE = "https://jxfw.gdut.edu.cn/xsksap!getDataList.action";
+
+    /// <summary>本科生获取课程成绩</summary>
+    public const string UNDER_COURSE_SCORE = "https://jxfw.gdut.edu.cn/xskccjxx!getDataList.action";
+
+    /// <summary>本科生教学服务系统登录链接</summary>
     public const string UNDER_GRADUATE_LOGIN = "https://jxfw.gdut.edu.cn/new/ssoLogin";
 
-    // 本科生选课列表
+    /// <summary>本科生选课可选列表</summary>
     public const string UNDER_COURSE_SEL = "https://jxfw.gdut.edu.cn/xsxklist!getDataList.action";
 
-    // 本科生选课已选列表
+    /// <summary>本科生选课已选列表</summary>
     public const string UNDER_COURSE_SEL_ED = "https://jxfw.gdut.edu.cn/xsxklist!getXzkcList.action";
 
-    // 本科生课程任务
+    /// <summary>本科生获取课程任务</summary>
     public const string UNDER_COURSE_TASK = "https://jxfw.gdut.edu.cn/xsxklist!getJxrlDataList.action";
 
+    #endregion
+
+    #region 图书馆
+
+    /// <summary>图书馆登录链接</summary>
     public const string LIBRARY_LOGIN = "https://opac.gdut.edu.cn/sso-cas/cas/index/gdut";
 
+    /// <summary>图书馆借阅列表</summary>
     public const string LIBRARY_LOAN_LIST = "https://opac.gdut.edu.cn/find/loanInfo/loanList";
 
+    /// <summary>图书馆每日推荐</summary>
+    public const string LIBRARY_DAILY_RECOMMEND = "https://opac.gdut.edu.cn/find/subscribe/dailyRecommend?";
+
     #endregion
+
+    // =============== 以下均暂时未使用 ===============
 
     // 研究生登录链接
     public const string GRADUATE_EHALL_LOGIN = "https://authserver.gdut.edu.cn/authserver/login?service=https://yjsxt.gdut.edu.cn/gsapp/sys/yjsemaphome/portal/index.do";

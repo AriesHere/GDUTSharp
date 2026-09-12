@@ -15,6 +15,11 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
     protected readonly ILogger<LibraryService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
+    /// <remarks>
+    /// 某些请求需要在请求头添加 HeaderName: "jwtOpacAuth" HeaderValue: _jwtOpacAuth
+    /// 如<see cref="GetDailyRecommand"/>
+    /// </remarks>
+    protected string _jwtOpacAuth = string.Empty;
 
     public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
     {
@@ -49,7 +54,19 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
             end = r.IndexOf('"', start);
             string refValue1 = WebUtility.HtmlDecode(r[start..end]);
             var rq1 = new HttpRequestMessage(HttpMethod.Get, refValue1);
-            await _client.SendAsync(rq1);   // 无需知道其内容
+            response = await _client.SendAsync(rq1);
+
+            r = await response.Content.ReadAsStringAsync();
+            response.Dispose();
+            var l = response.Headers.Location?.AbsoluteUri;
+            start = l?.IndexOf("jwt=") + "jwt=".Length ?? -1;
+            end = l?.IndexOf("&jwtHeader") ?? -1;
+            _jwtOpacAuth = l?[start..end] ?? string.Empty;
+
+            Cookie c = new("jwt", _jwtOpacAuth, null, "gdut.edu.cn");
+            Cookie c1 = new("jwtHeader", "jwtOpacAuth", null, "gdut.edu.cn");
+            _client.CookieContainer.Add(c);
+            _client.CookieContainer.Add(c1);
 
             return true;
         }
@@ -64,7 +81,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
         }
     }
 
-    public async virtual Task<List<BorrowedBook>?> GetBorrowedBooks()
+    public async virtual Task<List<BookInfo>?> GetBorrowedBooks()
     {
         try
         {
@@ -84,13 +101,31 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
                 Content = new StringContent(requestContent, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
             };
             using HttpResponseMessage response = await _client.SendAsync(request);
-            _logger.LogCritical("{0}", await response.Content.ReadAsStringAsync());
             var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.BorrowedBookDtoCollection);
             return result;
         }
         catch (Exception e)
         {
             if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求图书借阅列表异常。 {Exception}", e);
+            return null;
+        }
+    }
+
+    public async virtual Task<BookInfo?> GetDailyRecommend()
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, GDUTConstant.LIBRARY_DAILY_RECOMMEND);
+            request.Headers.Referrer = new(GDUTConstant.LIBRARY_DAILY_RECOMMEND);
+            request.Headers.Add("jwtOpacAuth", _jwtOpacAuth);
+            using HttpResponseMessage response = await _client.SendAsync(request);
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.DailyRecommandDtoCollection);
+            if (result is null) return null;
+            else return result;
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求图书馆每日推荐异常。 {Exception}", e);
             return null;
         }
     }

@@ -31,11 +31,12 @@ namespace GDUTSharp.Shared.Json;
 [JsonSerializable(typeof(CourseSelDtoCollection))]
 [JsonSerializable(typeof(List<CourseSel>))]
 
-[JsonSerializable(typeof(BorrowedBook))]
-[JsonSerializable(typeof(BorrowedBookDto))]
+[JsonSerializable(typeof(BookInfo))]
+[JsonSerializable(typeof(BookInfoDto))]
 [JsonSerializable(typeof(BorrowedBookDtoData))]
 [JsonSerializable(typeof(BorrowedBookDtoCollection))]
-[JsonSerializable(typeof(List<BorrowedBook>))]
+[JsonSerializable(typeof(DailyRecommandDtoCollection))]
+[JsonSerializable(typeof(List<BookInfo>))]
 public partial class AppJsonContext : JsonSerializerContext
 {
     public static readonly JsonSerializerOptions DefaultOptions = new()

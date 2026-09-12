@@ -1,9 +1,9 @@
-﻿using System.Xml.Linq;
+﻿namespace GDUTSharp.Shared.Type;
 
-namespace GDUTSharp.Shared.Type;
-
-public class BorrowedBook
+public class BookInfo
 {
+    public int RecordId { get; set; } = 0;
+
     public string Title { get; set; } = string.Empty;
 
     public string Author { get; set; } = string.Empty;
@@ -36,6 +36,7 @@ public class BorrowedBook
     {
         return $"""
         BorrowedBook:
+          - RecordId:{RecordId}
           - Title:{Title}
           - Author:{Author}
           - Publisher:{Publisher}

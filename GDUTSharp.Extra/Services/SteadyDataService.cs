@@ -25,7 +25,7 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
             {
                 IAuthService.SupportedServices.JXFW => GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.UNDER_GRADUATE_LOGIN,
                 IAuthService.SupportedServices.LIBRARY => GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.LIBRARY_LOGIN,
-                _ => GDUTConstant.AUTHSERVER_LOGIN_URL,
+                _ => GDUTConstant.AUTHSERVER_LOGIN,
             };
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
             HttpResponseMessage response = await _client.SendAsync(request);

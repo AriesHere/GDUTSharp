@@ -39,7 +39,7 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
     {
         try
         {
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_CLAZZ_TERM, referer: GDUTConstant.UNDER_CLAZZ_TERM);
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_TERM, referer: GDUTConstant.UNDER_TERM);
             using var response = await _client.SendAsync(request);
             string responseContent = await response.Content.ReadAsStringAsync();
             int index = responseContent.IndexOf("selected");
@@ -67,7 +67,7 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
                     { "sort", "zc,xq,jcdm" },
                     { "order", "asc" },
                 };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_CLAZZ, requestContent, GDUTConstant.UNDER_CLAZZ);
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_LESSONS, requestContent, GDUTConstant.UNDER_LESSONS);
             using HttpResponseMessage response = await _client.SendAsync(request);
             return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection);
         }
@@ -90,7 +90,7 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
                     { "sort", "zc,xq,jcdm2" },
                     { "order", "asc" },
                 };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_EXAM, requestContent, GDUTConstant.UNDER_EXAM);
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_EXAM_SCHEDULE, requestContent, GDUTConstant.UNDER_EXAM_SCHEDULE);
             using HttpResponseMessage response = await _client.SendAsync(request);
             return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamScheduleDtoCollection);
         }
@@ -116,7 +116,7 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
                     { "sort", "xnxqdm" },
                     { "order", "asc" },
                 };
-            request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_EXAM_SCORE, requestContent, GDUTConstant.UNDER_EXAM_SCORE);
+            request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_SCORE, requestContent, GDUTConstant.UNDER_COURSE_SCORE);
             response = await _client.SendAsync(request);
             request.Dispose();
             var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection);
@@ -129,7 +129,7 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
                 foreach (var item in terms)
                 {
                     requestContent["xnxqdm"] = Helper.TermStringToInt6Digit(item).ToString();
-                    request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_EXAM_SCORE, requestContent, GDUTConstant.UNDER_EXAM_SCORE);
+                    request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_SCORE, requestContent, GDUTConstant.UNDER_COURSE_SCORE);
                     response = await _client.SendAsync(request);
                     request.Dispose();
                     var tempResult = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection);
