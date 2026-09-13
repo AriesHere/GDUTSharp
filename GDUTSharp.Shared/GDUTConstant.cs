@@ -56,6 +56,12 @@ public static class GDUTConstant
 
     #endregion
 
+    #region 通知公文网
+
+    public const string NOTICE_BEFORE_LOGIN = "https://oas.gdut.edu.cn/seeyon/main.do";
+
+    #endregion
+
     // =============== 以下均暂时未使用 ===============
 
     // 研究生登录链接

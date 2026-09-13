@@ -13,7 +13,11 @@ namespace GDUTSharp.Interfaces;
 public interface IAuthService
 {
     /// <remarks>
+    /// 如果能保证已经处于登录成功状态，则 <paramref name="loginInfo"/> 可以为 null，
+    /// 若无法保证，请务必设置有效的 <paramref name="loginInfo"/>。
+    /// <br/>
     /// 通过返回内容自行判断是否登录成功（对于不同系统，判断方式不同）。
+    /// <br/>
     /// 对于同一用户，无需反复登录。对于同一用户在同一系统的操作，无需反复认证。
     /// </remarks>
     public Task<HttpResponseMessage?> LoginAndAuth(SupportedServices? service = null, LoginInfo ? loginInfo = null);

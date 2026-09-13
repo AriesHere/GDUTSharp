@@ -9,9 +9,9 @@ public interface ILibraryService
 {
     public Task<bool> Login(LoginInfo? loginInfo = null);
 
-    /// <summary>获取借阅列表</summary>
+    /// <summary>借阅列表</summary>
     public Task<List<BookInfo>?> GetBorrowedBooks();
 
-    /// <summary>获取每日推荐</summary>
+    /// <summary>每日推荐</summary>
     public Task<BookInfo?> GetDailyRecommend();
 }

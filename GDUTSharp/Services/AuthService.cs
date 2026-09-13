@@ -124,7 +124,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
             if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("检查是否需要验证码返回的原始内容：\n{r}", r);
             // 返回内容： {"isNeed":false} 或 {"isNeed":true}
             // 为它专门写个类太麻烦了，就这样吧，索引越界什么的交给 try-catch 处理
-            if (r[5] != 'N') throw new InvalidDataException($"返回内容为 {r} ，与预期不一致");
+            if (r[4] != 'N') throw new InvalidDataException($"返回内容为 {r} ，与预期不一致");
             return r[^3] == 'u';
         }
         catch (Exception e)
