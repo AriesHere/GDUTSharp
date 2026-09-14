@@ -8,6 +8,12 @@
 /// </remarks>
 public interface INoticeService
 {
+    /// <summary>主分类</summary>
+    public Dictionary<string, string> MainCategories { get; }
+
+    /// <summary>副分类，对应各部门</summary>
+    public Dictionary<string, string> SubCategories { get; }
+
     /// <summary>预处理</summary>
     /// <remarks>
     /// 由于通知公文网的特殊性，无法单独获取下面这四种信息，
@@ -15,7 +21,9 @@ public interface INoticeService
     /// </remarks>
     public Task<bool> Preprocess();
 
-    public void GetNotice(NoticeType noticeType);
+    public void GetNotice(string category);
+
+    public void FetchCategories();
 
     public enum NoticeType
     {

@@ -1,14 +1,11 @@
-﻿using System.Net;
-using GDUTSharp.Interfaces;
+﻿using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
-public class NoticeService(ILogger<NoticeService> logger, ICommonClient client) : INoticeService
+public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient client) : INoticeService
 {
-    protected record struct NoticeArgs(string EntityId = "", string PanelId = "");
-
     protected ILogger<NoticeService> _logger = logger;
     protected ICommonClient _client = client;
 
@@ -17,35 +14,36 @@ public class NoticeService(ILogger<NoticeService> logger, ICommonClient client) 
     protected string _spaceId = string.Empty;
     protected string _ownerId = string.Empty;
 
-    /// <summary>最新通知参数</summary>
-    protected NoticeArgs _noticeArgs = new();
-    /// <summary>最新简讯参数</summary>
-    protected NoticeArgs _bulletinArgs = new();
-    /// <summary>最新公告参数</summary>
-    protected NoticeArgs _announcementArgs = new();
-    /// <summary>招标公告参数</summary>
-    protected NoticeArgs _tenderArgs = new();
+    public Dictionary<string, string> MainCategories => [];
 
-    protected virtual string GenUrl(INoticeService.NoticeType noticeType)
+    public Dictionary<string, string> SubCategories => [];
+
+    /// <remarks>
+    /// <paramref name="id"/> 请通过 <see cref="MainCategories"/> 或 <see cref="SubCategories"/> 获取
+    /// </remarks>
+    protected virtual HttpRequestMessage GenRequest(string id, int pageNumber = 1, int pageSize = 20)
     {
-        NoticeArgs args = noticeType switch
-        {
-            INoticeService.NoticeType.Bulletin => _bulletinArgs,
-            INoticeService.NoticeType.Announcement => _announcementArgs,
-            INoticeService.NoticeType.Tender => _tenderArgs,
-            _ or INoticeService.NoticeType.Notice => _noticeArgs,
+        var content = new Dictionary<string, string> {
+            { "managerMethod", "findListDatas" },
+            { "arguments", $$"""
+                [{
+                    "pageSize":"{{pageSize}}",
+                    "pageNo":{{pageNumber}},
+                    "listType":"1",
+                    "spaceType":"2",
+                    "spaceId":"",
+                    "typeId":"",
+                    "condition":"publishDepartment",
+                    "textfield1":"",
+                    "textfield2":"",
+                    "myNews":"",
+                    "fragmentId":"{{id}}",
+                    "ordinal":"0",
+                    "panelValue":"designated_value"
+                }]
+                """ },
         };
-        if (string.IsNullOrWhiteSpace(args.EntityId)
-            || string.IsNullOrWhiteSpace(args.PanelId)
-            || string.IsNullOrWhiteSpace(_spaceId)
-            || string.IsNullOrWhiteSpace(_ownerId))
-        {
-            throw new ArgumentException($"尝试生成 url 时缺少参数。生成类型:{noticeType} SpaceId:{_spaceId} OwnerId:{_ownerId} PanelId:{args.PanelId} EntityId:{args.EntityId}");
-        }
-        long time = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-        // TODO: 这是基于"最新通知"板块的参数修改的，可以考虑添加更细致的调整
-        string urlArgs = WebUtility.UrlEncode($$"""{"x":"0","y":"2","xIndex":"0","sectionBeanId":"newsSection","entityId":"{{args.EntityId}}","ordinal":"0","r_ordinal":"0","fadd":"-1","spaceId":"{{_spaceId}}","spaceType":"before_login","width":"5","ownerId":"{{_ownerId}}","sprint":"","sectionWidth":569,"sbt":"0","sst":"1","b_t":"","s_tsc":"","s_tbc":"","b_s":"default","paramKeys":["lineHeight","aiSort","aiSortValue","setAiSort"],"paramValues":["35","0","0","0"],"panelId":"{{args.PanelId}}","bgc":"","bodyHeight":"825","rf":"multiRowThreeColumnTemplete","aiSort":"0","aiSortValue":"0"}""");
-        return string.Format(GDUTConstant.NOTICE_GET_PREFIX, time, urlArgs);
+        return ICommonClient.CreateRequest(HttpMethod.Post, string.Format(GDUTConstant.NOTICE_GET, id));
     }
 
     #endregion
@@ -59,77 +57,36 @@ public class NoticeService(ILogger<NoticeService> logger, ICommonClient client) 
             request = new(HttpMethod.Get, GDUTConstant.NOTICE_BEFORE_LOGIN);
             response = await _client.SendAsync(request);
             request.Dispose();
+            response.Dispose();
+
+            request = new(HttpMethod.Get, GDUTConstant.NOTICE_CATEGORIES);
+            response = await _client.SendAsync(request);
+            request.Dispose();
             var r = await response.Content.ReadAsStringAsync();
             response.Dispose();
-            var position = r.IndexOf('?');
-            var url = r[position..r.IndexOf('\"', position)];
 
-            request = new(HttpMethod.Get, GDUTConstant.NOTICE_BEFORE_LOGIN + url);
-            response = await _client.SendAsync(request);
-            request.Dispose();
-            r = await response.Content.ReadAsStringAsync(); // 返回内容很大
-            var span = r.AsSpan(r.IndexOf("公文悬浮菜单js"));
-            position = span.IndexOf("/seeyon/main.do?");
-            url = span[position..span.IndexOf('\"')].ToString();
+            var matches = Helper.Notice_CategoriesRegex().Matches(r);
+            var matchResults = new List<(string Value, string Key)>();
+            if (matchResults.Count <= 2)
+            {
+                throw new ArgumentException("匹配失败");
+            }
+            int flag = 0;
+            for (int i = 0; i < matchResults.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(matchResults[i].Value))
+                {
+                    flag++;
+                    continue;
+                }
+                (flag >= 2 ? MainCategories : SubCategories).Add(matchResults[i].Key, matchResults[i].Value);
+            }
 
-            request = new(HttpMethod.Get, url);
-            response = await _client.SendAsync(request);
-            request.Dispose();
-            r = await response.Content.ReadAsStringAsync();
-            span = r.AsSpan(r.IndexOf("\"spaceId\""));
-
-            position = span.IndexOf("\": \"") + "\": \"".Length;
-            span = span[position..];
-            _spaceId = span[position..span.IndexOf('\"')].ToString();
-
-            position = span.IndexOf("\"ownerId\": \"") + "\"ownerId\": \"".Length;
-            span = span[position..];
-            _ownerId = span[position..span.IndexOf('\"')].ToString();
-
-            // 获取各板块参数
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            _tenderArgs.EntityId = span[position..span.IndexOf('\"')].ToString();
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            _tenderArgs.PanelId = span[position..span.IndexOf('\"')].ToString();
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            _noticeArgs.EntityId = span[position..span.IndexOf('\"')].ToString();
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            _noticeArgs.PanelId = span[position..span.IndexOf('\"')].ToString();
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            _bulletinArgs.EntityId = span[position..span.IndexOf('\"')].ToString();
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            _bulletinArgs.PanelId = span[position..span.IndexOf('\"')].ToString();
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            _announcementArgs.EntityId = span[position..span.IndexOf('\"')].ToString();
-            position = span.IndexOf("\"id\": \"") + "\"id\": \"".Length;
-            span = span[position..];
-            _announcementArgs.PanelId = span[position..span.IndexOf('\"')].ToString();
-            // (0,0) => 图片横幅
-            // (0,1) => 公告查询
-            // (1,1) => 招标公告
-            // (0,2) => 最新通知
-            // (0,3) => 最新简讯
-            // (1,3) => 最新公告
             return true;
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证或登录异常。 {Exception}", e);
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("预处理异常。 {Exception}", e);
             return false;
         }
         finally
@@ -139,7 +96,12 @@ public class NoticeService(ILogger<NoticeService> logger, ICommonClient client) 
         }
     }
 
-    public async virtual void GetNotice(INoticeService.NoticeType noticeType)
+    public void GetNotice(string category)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void FetchCategories()
     {
         throw new NotImplementedException();
     }

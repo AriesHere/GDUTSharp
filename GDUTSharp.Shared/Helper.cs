@@ -33,4 +33,7 @@ public static partial class Helper
 
     [GeneratedRegex(@"id=""execution""[^>]*?value=""([^""]*)""")]
     public static partial Regex Login_ExecRegex();
+
+    [GeneratedRegex(@"<option\s+value=""(?<value>[^""]*)""\s*>(?<text>.*?)</option>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    public static partial Regex Notice_CategoriesRegex();
 }

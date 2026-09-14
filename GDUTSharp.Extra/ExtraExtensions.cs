@@ -173,7 +173,7 @@ public static class ExtraExtensions
                             LessonType = lessonType,
                             Profile = profile,
                         },
-                    _ => throw new ArgumentException("Pattern match failed."),
+                    _ => throw new ArgumentException("模式匹配失败"),
                 });
             }
         }
