@@ -23,6 +23,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\DtoCollectionBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\ExamScheduleDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\LessonDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\NoticeDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\ExamSchedule.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\Lesson.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\CourseScore.cs" />

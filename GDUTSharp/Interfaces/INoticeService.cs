@@ -15,18 +15,23 @@ public interface INoticeService
     /// </remarks>
     public Task<bool> Preprocess();
 
-    /// <summary>最新通知</summary>
-    /// <remarks>大部分类似于“关于xxx的通知”</remarks>
-    public void GetNotice();
+    public void GetNotice(NoticeType noticeType);
 
-    /// <summary>最新简讯</summary>
-    /// <remarks>大部分是宣传性文章</remarks>
-    public void GetBulletin();
+    public enum NoticeType
+    {
+        /// <summary>最新通知</summary>
+        /// <remarks>大部分类似于“关于xxx的通知”</remarks>
+        Notice,
 
-    /// <summary>最新公告</summary>
-    /// <remarks>大部分是“xxx情况公布”或“xxx公示”</remarks>
-    public void GetAnnouncement();
+        /// <summary>最新简讯</summary>
+        /// <remarks>大部分是宣传性文章</remarks>
+        Bulletin,
 
-    /// <summary>招标公告</summary>
-    public void GetTender();
+        /// <summary>最新公告</summary>
+        /// <remarks>大部分是“xxx情况公布”或“xxx公示”</remarks>
+        Announcement,
+
+        /// <summary>招标公告</summary>
+        Tender,
+    }
 }
