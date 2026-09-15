@@ -1,5 +1,6 @@
 ﻿namespace GDUTSharp.Shared.Type;
 
+[Attributes.OverrideToString]
 public partial class ExamSchedule
 {
     /// <summary>监考老师</summary>
@@ -40,24 +41,4 @@ public partial class ExamSchedule
 
     /// <summary>考场</summary>
     public string Location { get; set; } = string.Empty;
-
-    public override string ToString()
-    {
-        return $"""
-        Exam:
-          - Teachers:{string.Join(',', Teachers)}
-          - Date:{Date}
-          - Week:{Week}
-          - DayOfWeek:{DayOfWeek}
-          - Sessions:{string.Join(",", Sessions)}
-          - Time:{StartTime}-{EndTime}
-          - ExamType:{ExamType}
-          - Campus:{Campus}
-          - ScheduleType:{ScheduleType}
-          - Name:{Name}
-          - ExamPaperNumber:{ExamPaperNumber}
-          - Format:{Format}
-          - Location:{Location}
-        """;
-    }
 }

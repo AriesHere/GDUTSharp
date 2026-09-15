@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -17,10 +16,6 @@
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.13.0" />
     <PackageReference Include="Ical.Net" Version="5.2.3" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\GDUTSharp\GDUTSharp.csproj" />
   </ItemGroup>
-
 </Project>

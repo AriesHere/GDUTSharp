@@ -1,5 +1,6 @@
 ﻿namespace GDUTSharp.Shared.Type;
 
+[Attributes.OverrideToString]
 public partial class Lesson
 {
     /// <summary>课程名称</summary>
@@ -30,23 +31,4 @@ public partial class Lesson
     public string Profile { get; set; } = string.Empty;
 
     public string Term { get; set; } = string.Empty;
-
-    public override string ToString()
-    {
-        return $"""
-        Lesson:
-          - Name:{Name}
-          - ClassName:{string.Join(",", ClassName)}
-          - StudentsCount:{StudentsCount}
-          - Teacher:{Teacher}
-          - Week:{Week}
-          - DayOfWeek:{DayOfWeek}
-          - Sessions:{string.Join(",", Sessions)}
-          - Location:{Location}
-          - Date:{Date}
-          - LessonSequence:{LessonSequence}
-          - LessonType:{LessonType}
-          - Profile:{Profile}
-        """;
-    }
 }

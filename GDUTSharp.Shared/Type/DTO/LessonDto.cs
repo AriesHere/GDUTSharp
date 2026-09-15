@@ -89,7 +89,7 @@ public class LessonDto
             LessonSequence = dto.kxh,
             LessonType = dto.jxhjmc,
             Profile = dto.sknrjj,
-            Term = dto.xnxqdm
+            Term = dto.xnxqdm,
         };
     }
 }

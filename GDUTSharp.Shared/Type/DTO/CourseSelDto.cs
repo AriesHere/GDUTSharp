@@ -62,7 +62,7 @@ public class CourseSelDto
             Type = dto.kcdlmc,
             Category = dto.kcflmc,
             Teacher = dto.teaxm,
-            EnrolledCount = dto.jxbrs
+            EnrolledCount = dto.jxbrs,
         };
     }
 }

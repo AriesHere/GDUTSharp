@@ -1,6 +1,7 @@
 ﻿namespace GDUTSharp.Shared.Type;
 
-public class BookInfo
+[Attributes.OverrideToString]
+public partial class BookInfo
 {
     public int RecordId { get; set; } = 0;
 
@@ -31,23 +32,4 @@ public class BookInfo
 
     /// <summary>索书号</summary>
     public string Index { get; set; } = string.Empty;
-
-    public override string ToString()
-    {
-        return $"""
-        BorrowedBook:
-          - RecordId:{RecordId}
-          - Title:{Title}
-          - Author:{Author}
-          - Publisher:{Publisher}
-          - ISBN:{ISBN}
-          - PublishYear:{PublishYear}
-          - LoanDate:{LoanDate}
-          - NormReturnDate:{NormReturnDate}
-          - LocationName:{LocationName}
-          - Barcode:{Barcode}
-          - PropNo:{PropNo}
-          - Index:{Index}
-        """;
-    }
 }

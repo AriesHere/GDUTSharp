@@ -1,5 +1,6 @@
 ﻿namespace GDUTSharp.Shared.Type;
 
+[Attributes.OverrideToString("CourseSelection")]
 public partial class CourseSel
 {
     /// <summary>课程任务代码</summary>
@@ -35,22 +36,4 @@ public partial class CourseSel
 
     /// <summary>已选人数</summary>
     public int EnrolledCount { get; set; }
-
-    public override string ToString()
-    {
-        return $"""
-        CourseSelection:
-          - CourseCode:{CourseCode}
-          - StudentsCount:{StudentsCount}
-          - Profile:{Profile}
-          - ProgramName:{ProgramName}
-          - Name:{Name}
-          - ClassHour:{ClassHour}
-          - Credit:{Credit}
-          - Type:{Type}
-          - Category:{Category}
-          - Teacher:{Teacher}
-          - EnrolledCount:{EnrolledCount}
-        """;
-    }
 }

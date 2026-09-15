@@ -1,5 +1,6 @@
 ﻿namespace GDUTSharp.Shared.Type;
 
+[Attributes.OverrideToString]
 public partial class CourseScore
 {
     /// <summary>课程分类</summary>
@@ -36,22 +37,4 @@ public partial class CourseScore
     /// <summary>成绩方式</summary>
     /// <remarks>TODO: 只见过百分制，不知道是否存在其它方式。如果存在，注意修改 <see cref="Score"/> 的类型</remarks>
     public string GradeScale { get; set; } = string.Empty;
-
-    public override string ToString()
-    {
-        return $"""
-        LessonScore:
-          - Category:{Category}
-          - Term:{Term}
-          - Type:{Type}
-          - Gp:{Gp}
-          - Name:{Name}
-          - Score:{Score}
-          - ExamType:{ExamType}
-          - Credit:{Credit}
-          - ClassHour:{ClassHour}
-          - StudyMode:{StudyMode}
-          - GradeScale:{GradeScale}
-        """;
-    }
 }

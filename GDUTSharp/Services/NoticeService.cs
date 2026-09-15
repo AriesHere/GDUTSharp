@@ -43,7 +43,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
                 }]
                 """ },
         };
-        return ICommonClient.CreateRequest(HttpMethod.Post, string.Format(GDUTConstant.NOTICE_GET, id));
+        return ICommonClient.CreateRequest(HttpMethod.Post, string.Format(GDUTConstant.NOTICE_GET, id), content);
     }
 
     #endregion
@@ -69,7 +69,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
             var matchResults = new List<(string Value, string Key)>();
             if (matchResults.Count <= 2)
             {
-                throw new ArgumentException("匹配失败");
+                throw new ArgumentException("正则匹配失败");
             }
             int flag = 0;
             for (int i = 0; i < matchResults.Count; i++)

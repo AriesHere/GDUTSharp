@@ -121,7 +121,7 @@ public class BookInfoDto
             LocationName = dto.locationName,
             Barcode = dto.barcode,
             PropNo = dto.propNo,
-            Index = dto.callNo
+            Index = dto.callNo,
         };
         if (!string.IsNullOrWhiteSpace(dto.loanDate)) r.LoanDate = DateOnly.Parse(dto.loanDate);
         if (!string.IsNullOrWhiteSpace(dto.normReturnDate)) r.NormReturnDate = DateOnly.Parse(dto.normReturnDate);
