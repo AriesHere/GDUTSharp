@@ -1,4 +1,7 @@
-﻿namespace GDUTSharp.Interfaces;
+﻿using GDUTSharp.Shared;
+using GDUTSharp.Shared.Type;
+
+namespace GDUTSharp.Interfaces;
 
 /// <summary>
 /// 通知简讯网
@@ -21,9 +24,17 @@ public interface INoticeService
     /// </remarks>
     public Task<bool> Preprocess();
 
-    public void GetNotice(string category);
+    /// <summary>
+    /// 通过分类的 id 来获取对应分类的 NoticeCollection
+    /// </summary>
+    public Task<NoticeCollection?> GetNoticeCollection(string id, int pageNumber, int pageSize = 20);
 
-    public void FetchCategories();
+    /// <summary>拼接通知详情的 url</summary>
+    public static string GetNoticeDetailUrl(string id) => string.Format(GDUTConstant.NOTICE_DETAIL, id);
+
+    /// <summary>拼接通知图片的 url</summary>
+    /// <remarks><paramref name="imageUrl"/> 是 <see cref="Notice.ImageUrl"/></remarks>
+    public static string GetNoticeImageUrl(string imageUrl) => GDUTConstant.NOTICE_BASE + imageUrl;
 
     public enum NoticeType
     {

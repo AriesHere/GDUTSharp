@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Helper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\AppJsonContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\ClassNameConverter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Json\DateTimeConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\SessionsConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\SplittedStringConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\BookInfo.cs" />
@@ -31,8 +32,5 @@
     <Compile Include="$(MSBuildThisFileDirectory)Type\Notice.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\Sessions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\User.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)README.md" />
   </ItemGroup>
 </Project>

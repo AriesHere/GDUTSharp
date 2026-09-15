@@ -58,12 +58,19 @@ public static class GDUTConstant
 
     #region 通知公文网
 
+    public const string NOTICE_BASE = "https://oas.gdut.edu.cn";
+
     public const string NOTICE_BEFORE_LOGIN = "https://oas.gdut.edu.cn/seeyon/main.do";
 
+    /// <summary>分类数据</summary>
     public const string NOTICE_CATEGORIES = "https://oas.gdut.edu.cn/seeyon/ggIP.do?method=portalSeachIndex";
 
-    /// <remarks>将 {0} 替换为 id</remarks>
-    public const string NOTICE_GET = "https://oas.gdut.edu.cn/seeyon/newsData.do?method=newsIndex&spaceType=2&fragmentId={0}&ordinal=0&panelValue=designated_value";
+    /// <summary>某分类下的通知数据</summary>
+    public const string NOTICE_CATEGORIES_GET = "https://oas.gdut.edu.cn/seeyon/ajax.do?method=ajaxAction&managerName=newsDataManager";
+
+    /// <summary>通知详情</summary>
+    /// <remarks>将 {0} 替换为通知的 id</remarks>
+    public const string NOTICE_DETAIL = "https://oas.gdut.edu.cn/seeyon/newsData.do?method=newsView&newsId={0}";
 
     #endregion
 

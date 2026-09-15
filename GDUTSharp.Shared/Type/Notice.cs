@@ -23,7 +23,7 @@ public partial class Notice
 
     public string Profile { get; set; } = string.Empty;
 
-    /// <remarks>需要拼接</remarks>
+    /// <remarks>需要通过 <see cref="Interfaces.INoticeService.GetNoticeImageUrl(string)"/> 拼接</remarks>
     public string ImageUrl { get; set; } = string.Empty;
 
     public string Publisher { get; set; } = string.Empty;

@@ -1,5 +1,8 @@
 ﻿#pragma warning disable IDE1006 // Naming Styles
 
+using System.Text.Json.Serialization;
+using GDUTSharp.Shared.Json;
+
 namespace GDUTSharp.Shared.Type.DTO;
 
 public class NoticeDtoCollection
@@ -36,9 +39,11 @@ public class NoticeDto
 
     public string publishUserDepart { get; set; } = string.Empty;
 
+    [JsonConverter(typeof(FlexibleDateTimeConverter))]
     public DateTime createDate { get; set; }
 
     /// <remarks>原始数据中有 publishDate 而这里使用 publishDate1 是因为后者能精确到秒</remarks>
+    [JsonConverter(typeof(FlexibleDateTimeConverter))]
     public DateTime publishDate1 { get; set; }
 
     public string typeName { get; set; } = string.Empty;
