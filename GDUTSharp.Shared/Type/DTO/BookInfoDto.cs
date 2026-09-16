@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace GDUTSharp.Shared.Type.DTO;
+﻿namespace GDUTSharp.Shared.Type.DTO;
 
 /// TODO: 从 https://opac.gdut.edu.cn/#/searchList/bookDetails/{recordId} 获取详细信息
 /// 

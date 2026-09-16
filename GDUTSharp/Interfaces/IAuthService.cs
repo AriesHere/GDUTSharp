@@ -33,6 +33,15 @@ public interface IAuthService
     /// <param name="username">学号</param>
     public Task<bool> CheckNeedCaptcha(string username);
 
+    /// <summary>获取验证码</summary>
+    public Task<AuthServerCaptcha?> GetCaptcha();
+
+    /// <summary>向统一认证中心服务提交验证码并检查是否验证通过</summary>
+    /// <remarks>
+    /// <b>TODO：尚未验证此方法的有效性</b>
+    /// </remarks>
+    public Task<bool> SubmitCaptcha(SliderPayloadDto payload, AuthServerCaptcha captcha);
+
     public enum SupportedServices
     {
         JXFW,       // 教学服务系统

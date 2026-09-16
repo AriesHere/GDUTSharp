@@ -13,6 +13,10 @@ public static class GDUTConstant
     /// <remarks>需要在末尾添加学号</remarks>
     public const string AUTHSERVER_CHECK_CAPTCHA_PREFIX = "https://authserver.gdut.edu.cn/authserver/checkNeedCaptcha.htl?username=";
 
+    public const string AUTHSERVER_CAPTCHA_GET = "https://authserver.gdut.edu.cn/authserver/common/openSliderCaptcha.htl";
+
+    public const string AUTHSERVER_CAPTCHA_VERIFY = "https://authserver.gdut.edu.cn/authserver/common/verifySliderCaptcha.htl";
+
     #endregion
 
     #region 教学服务系统（本科生）

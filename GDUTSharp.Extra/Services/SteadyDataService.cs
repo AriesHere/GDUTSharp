@@ -63,7 +63,7 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
 
                     formData[""] = pwdEncryptSalt;
                     formData["username"] = loginInfo.UserName;
-                    formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
+                    formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt.ToBytes(), _security.GenIV());
 
                     using var request2 = ICommonClient.CreateRequest(
                         HttpMethod.Post,

@@ -43,6 +43,10 @@ namespace GDUTSharp.Shared.Json;
 [JsonSerializable(typeof(NoticeDtoCollection))]
 [JsonSerializable(typeof(NoticeCollection))]
 [JsonSerializable(typeof(List<Notice>))]
+
+[JsonSerializable(typeof(AuthServerCaptchaDto))]
+[JsonSerializable(typeof(SliderTrackDto))]
+[JsonSerializable(typeof(SliderPayloadDto))]
 public partial class AppJsonContext : JsonSerializerContext
 {
     public static readonly JsonSerializerOptions DefaultOptions = new()

@@ -17,7 +17,7 @@ namespace GDUTSharp.Test
             """)]
         public void TestJXFWExportedLessonsFileAnalysis(string input)
         {
-            MemoryStream s = new(input.GetBytes());
+            MemoryStream s = new(input.ToBytes());
             var r = ExtraExtensions.Read(s, ExtraExtensions.JXFWFileType.AutoDetect);
             Assert.HasCount(2, r);
         }

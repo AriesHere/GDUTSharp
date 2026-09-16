@@ -1,7 +1,10 @@
 ﻿using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.Logging;
 
@@ -55,7 +58,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                     formData["execution"] = execution;
                     formData[""] = pwdEncryptSalt;
                     formData["username"] = loginInfo.UserName;
-                    formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt);
+                    formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt.ToBytes(), _security.GenIV());
 
                     using var request2 = ICommonClient.CreateRequest(
                         HttpMethod.Post,
@@ -96,7 +99,8 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     {
         try
         {
-            using HttpResponseMessage response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Get, GDUTConstant.AUTHSERVER_LOGOUT));
+            using HttpRequestMessage request = new(HttpMethod.Get, GDUTConstant.AUTHSERVER_LOGOUT);
+            using HttpResponseMessage response = await _client.SendAsync(request);
             var r = await response.Content.ReadAsStringAsync();
             return r.Contains("注销成功");
         }
@@ -119,7 +123,8 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     {
         try
         {
-            using HttpResponseMessage response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Get, GDUTConstant.AUTHSERVER_CHECK_CAPTCHA_PREFIX + username));
+            using HttpRequestMessage request = new(HttpMethod.Get, GDUTConstant.AUTHSERVER_CHECK_CAPTCHA_PREFIX + username);
+            using HttpResponseMessage response = await _client.SendAsync(request);
             var r = await response.Content.ReadAsStringAsync();
             if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("检查是否需要验证码返回的原始内容：\n{r}", r);
             // 返回内容： {"isNeed":false} 或 {"isNeed":true}
@@ -130,6 +135,42 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         catch (Exception e)
         {
             if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("检查是否需要验证码失败 {Exception}", e);
+            return false;
+        }
+    }
+
+    public async virtual Task<AuthServerCaptcha?> GetCaptcha()
+    {
+        try
+        {
+            using HttpRequestMessage request = new(HttpMethod.Get, GDUTConstant.AUTHSERVER_CAPTCHA_GET);
+            using HttpResponseMessage response = await _client.SendAsync(request);
+            var r = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AuthServerCaptchaDto);
+            if (r is null) return null;
+            return r;
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取验证码失败 {Exception}", e);
+            return null;
+        }
+    }
+
+    public async virtual Task<bool> SubmitCaptcha(SliderPayloadDto payload, AuthServerCaptcha captcha)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(payload, AppJsonContext.Context.SliderPayloadDto);
+            string sign = _security.CbcEncrypt(json, captcha.SmallImage.ToBytes()[^16..], _security.GenIV());
+            var content = new Dictionary<string, string> { {"sign", sign} };
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.AUTHSERVER_CAPTCHA_VERIFY, content);
+            using var response = await _client.SendAsync(request);
+            var r = await response.Content.ReadAsStringAsync();
+            return r.Contains("success");
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("校验验证码失败 {Exception}", e);
             return false;
         }
     }

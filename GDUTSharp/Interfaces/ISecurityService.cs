@@ -2,7 +2,9 @@
 
 public interface ISecurityService
 {
-    public string CbcEncrypt(string plaintext, string key);
+    public byte[] GenIV();
 
-    public string CbcDecrypt(string cipherText, string key);
+    public string CbcEncrypt(string plaintext, byte[] key, byte[] iv);
+
+    public string CbcDecrypt(string cipherText, byte[] key, byte[] iv);
 }
