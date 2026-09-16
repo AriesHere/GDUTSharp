@@ -34,7 +34,7 @@ namespace GDUTSharp.Services
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 using ICryptoTransform encryptor = aes.CreateEncryptor();
-                var plainBytes = (GenPrefix() + plaintext).ToBytes();
+                var plainBytes = this.GenPrefix().Concat(plaintext.ToBytes()).ToArray();
                 byte[] encrypted = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
                 return Convert.ToBase64String(encrypted);
             }
@@ -57,7 +57,7 @@ namespace GDUTSharp.Services
                 using ICryptoTransform decryptor = aes.CreateDecryptor();
                 byte[] cipherBytes = Convert.FromBase64String(cipherText);
                 byte[] plainBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
-                return plainBytes.GetString()[PREFIX_LENGTH..];
+                return plainBytes[PREFIX_LENGTH..].GetString();
             }
             catch (Exception e)
             {

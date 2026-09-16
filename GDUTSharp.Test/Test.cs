@@ -1,5 +1,8 @@
-﻿using GDUTSharp.Extra;
+﻿using System.Diagnostics;
+using GDUTSharp.Extra;
+using GDUTSharp.Services;
 using GDUTSharp.Shared;
+using GDUTSharp.Test.TestServers;
 
 namespace GDUTSharp.Test
 {
@@ -29,6 +32,18 @@ namespace GDUTSharp.Test
         {
             var r = Shared.Helper.TermStringToInt6Digit(raw);
             Assert.AreEqual(expected, r);
+        }
+
+        [TestMethod]
+        public void TestEncrypt()
+        {
+            SecurityService s = new(new TestLogger<SecurityService>());
+            var raw = "System.Security.Cryptography.CryptographicAException: Specified key is not a valid size for this algorithm.";
+            byte[] key = new byte[32];
+            for (int i = 0; i < 32; i++) key[i] = (byte)Random.Shared.Next(byte.MaxValue);
+            var cipherText = s.CbcEncrypt(raw, key, s.GenIV());
+            var result = s.CbcDecrypt(cipherText, key, s.GenIV());
+            Assert.AreEqual(raw, result);
         }
     }
 }
