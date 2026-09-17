@@ -1,7 +1,5 @@
 ﻿using System.Security.Cryptography;
-using System.Text;
 using GDUTSharp.Interfaces;
-using GDUTSharp.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services
@@ -10,21 +8,9 @@ namespace GDUTSharp.Services
     {
         private readonly ILogger<SecurityService> _logger = logger;
 
-        protected const int PREFIX_LENGTH = 64;
+        public virtual byte[] GenIV() => RandomNumberGenerator.GetBytes(16);
 
-        /// <summary>基于 <see cref="AesChars"/> 生成随机字符</summary>
-        protected virtual byte[] GenRandomString(int length)
-        {
-            byte[] bytes = new byte[length];
-            for (int i = 0; i < length; i++) bytes[i] = (byte)Random.Shared.Next(byte.MaxValue);
-            return bytes;
-        }
-
-        public virtual byte[] GenIV() => GenRandomString(16);
-
-        protected virtual byte[] GenPrefix() => GenRandomString(PREFIX_LENGTH);
-
-        public virtual string CbcEncrypt(string plaintext, byte[] key, byte[] iv)
+        public virtual byte[] CbcEncrypt(byte[] plaintext, byte[] key, byte[] iv)
         {
             try
             {
@@ -34,9 +20,7 @@ namespace GDUTSharp.Services
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 using ICryptoTransform encryptor = aes.CreateEncryptor();
-                var plainBytes = this.GenPrefix().Concat(plaintext.ToBytes()).ToArray();
-                byte[] encrypted = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
-                return Convert.ToBase64String(encrypted);
+                return encryptor.TransformFinalBlock(plaintext, 0, plaintext.Length);
             }
             catch (Exception e)
             {
@@ -45,7 +29,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public virtual string CbcDecrypt(string cipherText, byte[] key, byte[] iv)
+        public virtual byte[] CbcDecrypt(byte[] cipherText, byte[] key, byte[] iv)
         {
             try
             {
@@ -55,9 +39,7 @@ namespace GDUTSharp.Services
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
                 using ICryptoTransform decryptor = aes.CreateDecryptor();
-                byte[] cipherBytes = Convert.FromBase64String(cipherText);
-                byte[] plainBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
-                return plainBytes[PREFIX_LENGTH..].GetString();
+                return decryptor.TransformFinalBlock(cipherText, 0, cipherText.Length);
             }
             catch (Exception e)
             {

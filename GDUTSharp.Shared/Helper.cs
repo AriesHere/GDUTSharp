@@ -6,7 +6,9 @@ namespace GDUTSharp.Shared;
 public static partial class Helper
 {
     public static byte[] ToBytes(this string s) => Encoding.UTF8.GetBytes(s);
+
     public static string GetString(this byte[] b) => Encoding.UTF8.GetString(b);
+
     public static int TermStringToInt6Digit(string term)
     {
         // 2026春季 => 202502

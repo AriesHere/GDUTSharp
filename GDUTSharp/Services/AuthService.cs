@@ -16,6 +16,10 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     protected readonly ICommonClient _client = client;
     protected readonly ISecurityService _security = security;
 
+    /// <summary>附加前缀</summary>
+    /// <remarks>TODO: 不知为何，使用随机前缀时会出问题，后面再看看</remarks>
+    protected virtual byte[] PrefixProcess(string raw) => [.."J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1".ToBytes(), ..raw.ToBytes()];
+
     public async virtual Task<HttpResponseMessage?> LoginAndAuth(IAuthService.SupportedServices? service = null, LoginInfo ? loginInfo = null)
     {
         try
@@ -58,7 +62,8 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                     formData["execution"] = execution;
                     formData[""] = pwdEncryptSalt;
                     formData["username"] = loginInfo.UserName;
-                    formData["password"] = _security.CbcEncrypt(loginInfo.Password, pwdEncryptSalt.ToBytes(), _security.GenIV());
+                    formData["password"] = Convert.ToBase64String(
+                        _security.CbcEncrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), _security.GenIV()));
 
                     using var request2 = ICommonClient.CreateRequest(
                         HttpMethod.Post,
@@ -106,9 +111,9 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         }
         catch (CookieException e) when (e.Message.Contains("Domain") && e.Message.Contains("wisedu.com.cn"))
         {
-            /// 预料中的异常（不过退出登录依然成功）：
-            /// 退出登录失败 System.Net.CookieException: An error occurred when parsing the Cookie header for Uri 'https://authserver.gdut.edu.cn/authserver/logout'.
-            ///        ---> System.Net.CookieException: The 'Domain'='wisedu.com.cn' part of the cookie is invalid.
+            // 预料中的异常（不过退出登录依然成功）：
+            // 退出登录失败 System.Net.CookieException: An error occurred when parsing the Cookie header for Uri 'https://authserver.gdut.edu.cn/authserver/logout'.
+            //        ---> System.Net.CookieException: The 'Domain'='wisedu.com.cn' part of the cookie is invalid.
             if (_logger.IsEnabled(LogLevel.Warning)) _logger.LogWarning("预料中的异常 {Exception}", e);
             return true;
         }
@@ -161,7 +166,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         try
         {
             string json = JsonSerializer.Serialize(payload, AppJsonContext.Context.SliderPayloadDto);
-            string sign = _security.CbcEncrypt(json, captcha.SmallImage.ToBytes()[^16..], _security.GenIV());
+            string sign = Convert.ToBase64String(_security.CbcEncrypt(this.PrefixProcess(json), captcha.SmallImage.ToBytes()[^16..], _security.GenIV()));
             var content = new Dictionary<string, string> { {"sign", sign} };
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.AUTHSERVER_CAPTCHA_VERIFY, content);
             using var response = await _client.SendAsync(request);
