@@ -65,7 +65,7 @@ var jxfw = AppHost.Services.GetRequiredService<IJXFWService>();
 LoginInfo testLoginInfo = new() { UserName = "", Password = "" };
 var r = await jxfw.Login(testLoginInfo);
 logger.LogCritical("登录结果:{Result}", r); // 自行处理登录错误时的情况
-var term = jxfw.GetTerm().Result;   // 获取学期
+var term = await jxfw.GetTerm();   // 获取学期
 if (term is not null && await jxfw.GetLessons(term) is List<Lesson> lessons)
 {
     // 以下是 GDUTSharp.Extra 的功能之一
