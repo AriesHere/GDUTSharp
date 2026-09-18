@@ -13,6 +13,7 @@ GDUTSharp (保证支持 AOT):
     - 考试安排信息
     - 课程成绩信息
     - 选课页面 => 可选课程和已选课程信息
+    - 考级成绩
 - 图书馆
     - 每日推荐
     - 借阅信息
@@ -21,7 +22,7 @@ GDUTSharp (保证支持 AOT):
 - 其它
     - 绩点计算
 
-GDUTSharp.Extra (受依赖库影响，不一定支持 AOT):
+GDUTSharp.Extra:
 - 为部分功能提供更稳健的实现
 - 读取从教学服务中心导出的数据
 - 将课表信息和考试安排信息输出为 [iCalendar](https://icalendar.org/) 文件

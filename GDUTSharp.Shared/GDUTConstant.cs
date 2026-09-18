@@ -45,6 +45,9 @@ public static class GDUTConstant
     /// <summary>本科生获取课程任务</summary>
     public const string UNDER_COURSE_TASK = "https://jxfw.gdut.edu.cn/xsxklist!getJxrlDataList.action";
 
+    /// <summary>本科生获取考级成绩</summary>
+    public const string UNDER_GRADING_EXAM_SCORE = "https://jxfw.gdut.edu.cn/xskjcjxx!getDataList.action";
+
     #endregion
 
     #region 图书馆

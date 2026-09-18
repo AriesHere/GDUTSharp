@@ -31,6 +31,11 @@ namespace GDUTSharp.Shared.Json;
 [JsonSerializable(typeof(CourseSelDtoCollection))]
 [JsonSerializable(typeof(List<CourseSel>))]
 
+[JsonSerializable(typeof(GradingExamScore))]
+[JsonSerializable(typeof(GradingExamScoreDto))]
+[JsonSerializable(typeof(GradingExamScoreDtoCollection))]
+[JsonSerializable(typeof(List<GradingExamScore>))]
+
 [JsonSerializable(typeof(BookInfo))]
 [JsonSerializable(typeof(BookInfoDto))]
 [JsonSerializable(typeof(BorrowedBookDtoData))]

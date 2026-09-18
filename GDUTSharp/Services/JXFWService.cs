@@ -229,4 +229,27 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
             return null;
         }
     }
+
+    public async Task<List<GradingExamScore>?> GetGradingExamScore()
+    {
+        try
+        {
+            var requestContent = new Dictionary<string, string>
+                {
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "sort", "xnxqdm,kssj" },
+                    { "order", "asc" },
+                };
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_GRADING_EXAM_SCORE, requestContent, GDUTConstant.UNDER_GRADING_EXAM_SCORE);
+            using HttpResponseMessage response = await _client.SendAsync(request);
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.GradingExamScoreDtoCollection);
+            return result;
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求考级成绩异常。 {Exception}", e);
+            return null;
+        }
+    }
 }

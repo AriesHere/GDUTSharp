@@ -26,4 +26,7 @@ public interface IJXFWService
 
     /// <summary>选课页面中显示的已选课程</summary>
     public Task<List<CourseSel>?> GetSelectedCourse();
+
+    /// <summary>考级成绩</summary>
+    public Task<List<GradingExamScore>?> GetGradingExamScore();
 }
