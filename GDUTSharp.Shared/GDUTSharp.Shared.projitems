@@ -9,7 +9,7 @@
     <Import_RootNamespace>GDUTSharp.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Attributes\OverrideToString.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\OverrideToStringAttriubte.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GDUTConstant.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\AppJsonContext.cs" />

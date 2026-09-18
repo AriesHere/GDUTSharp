@@ -42,8 +42,8 @@ namespace GDUTSharp.Test
             byte[] raw = "System.Security.Cryptography.CryptographicAException: Specified key is not a valid size for this algorithm.".ToBytes();
             var key = RandomNumberGenerator.GetBytes(32);
             var iv = s.GenIV();
-            var cipherText = s.CbcEncrypt(raw, key, iv);
-            var result = s.CbcDecrypt(cipherText, key, iv);
+            var cipherText = s.AesCbcEncrypt(raw, key, iv);
+            var result = s.AesCbcDecrypt(cipherText, key, iv);
             Assert.AreEqual(raw.GetString(), result.GetString());
         }
     }

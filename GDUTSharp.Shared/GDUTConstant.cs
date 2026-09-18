@@ -102,15 +102,15 @@ public static class GDUTConstant
     // 从 ehall 获得用户个人信息，用来测试是否登录成功
     public const string GRADUATE_USER_INFO = "https://ehall.gdut.edu.cn/gsapp/sys/wdkbapp/wdkcb/initXsxx.do?XH=";
 
-    // 登录 ehall 大厅 pre 登录    TMA: 这是统一认证中心，ehall 是另外一个
+    // 登录 ehall 大厅 pre 登录
     public const string EHALL_URL = "https://authserver.gdut.edu.cn/authserver/login?type=userNameLogin";
 
-    // ehall 的个人信息接口，用来获取正确的学号    TMA: 同上
+    // ehall 的个人信息接口，用来获取正确的学号
     public const string EHALL_USER_INFO = "https://authserver.gdut.edu.cn/personalInfo/common/getUserConf";
 
     // 后续补充这里即可
     public const string TEACHER_EHALL_LOGIN = "https://authserver.gdut.edu.cn/";
 
-    // 图书馆图书检索  TODO
+    // TODO： 图书馆图书检索
     public const string LIBRARY_SEARCH = "https://opac.gdut.edu.cn/find/unify/search";
 }

@@ -4,7 +4,7 @@ public interface ISecurityService
 {
     public byte[] GenIV();
 
-    public byte[] CbcEncrypt(byte[] plaintext, byte[] key, byte[] iv);
+    public byte[] AesCbcEncrypt(byte[] plaintext, byte[] key, byte[] iv);
 
-    public byte[] CbcDecrypt(byte[] cipherText, byte[] key, byte[] iv);
+    public byte[] AesCbcDecrypt(byte[] cipherText, byte[] key, byte[] iv);
 }

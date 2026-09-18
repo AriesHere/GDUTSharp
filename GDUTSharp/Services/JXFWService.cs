@@ -147,7 +147,7 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
                     }
                 }
             }
-        END:
+            END:
             return result;
         }
         catch (Exception e)
@@ -195,9 +195,7 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
                 };
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_SEL_ED, requestContent, GDUTConstant.UNDER_COURSE_SEL_ED);
             using HttpResponseMessage response = await _client.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListCourseSelDto);
-            if (result is null) return null;
-            else return [.. result];
+            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelDtoCollection);
         }
         catch (Exception e)
         {
@@ -220,8 +218,7 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
                 };
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_TASK, requestContent, GDUTConstant.UNDER_COURSE_TASK);
             using HttpResponseMessage response = await _client.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLesson);
-            return result;
+            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection);
         }
         catch (Exception e)
         {

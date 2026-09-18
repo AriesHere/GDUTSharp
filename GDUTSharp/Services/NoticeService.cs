@@ -13,15 +13,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
     protected ILogger<NoticeService> _logger = logger;
     protected ICommonClient _client = client;
 
-    #region 请求数据时的相关参数
-
-    public Dictionary<string, string> MainCategories { get; } = [];
-
-    public Dictionary<string, string> SubCategories { get; } = [];
-
-    #endregion
-
-    public async virtual Task<bool> Preprocess()
+    public async virtual Task<(Dictionary<string, string> MainCategories, Dictionary<string, string> SubCategories)?> Preprocess()
     {
         HttpRequestMessage? request = null;
         HttpResponseMessage? response = null;
@@ -44,6 +36,8 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
                 throw new ArgumentException("正则匹配失败");
             }
             int flag = 0;
+            Dictionary<string, string> mainCategories = [];
+            Dictionary<string, string> subCategories = [];
             foreach (Match m in matches)
             {
                 if (string.IsNullOrWhiteSpace(m.Groups["value"].Value))
@@ -51,15 +45,15 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
                     flag++;
                     continue;
                 }
-                (flag >= 2 ? MainCategories : SubCategories).Add(m.Groups["text"].Value, m.Groups["value"].Value);
+                (flag >= 2 ? mainCategories : subCategories).Add(m.Groups["text"].Value, m.Groups["value"].Value);
             }
 
-            return true;
+            return (mainCategories, subCategories);
         }
         catch (Exception e)
         {
             if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("预处理异常。 {Exception}", e);
-            return false;
+            return null;
         }
         finally
         {
@@ -77,7 +71,6 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
             request = this.CreateRequest(id, pageNumber, pageSize);
             response = await _client.SendAsync(request);
             request.Dispose();
-            _logger.LogCritical("{0}", response.Content.ReadAsStringAsync().Result);
             var r = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.NoticeDtoCollection);
             response.Dispose();
             if (r is null) return null;
@@ -97,7 +90,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
 
     /// <summary>生成用于请求分类通知的 <see cref="HttpRequestMessage"/></summary>
     /// <remarks>
-    /// <paramref name="id"/> 请通过 <see cref="MainCategories"/> 或 <see cref="SubCategories"/> 获取
+    /// <paramref name="id"/> 通过 <see cref="Preprocess"/> 获取的 Dictionary 得到
     /// </remarks>
     protected virtual HttpRequestMessage CreateRequest(string id, int pageNumber, int pageSize)
     {

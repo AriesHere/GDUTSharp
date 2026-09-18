@@ -12,13 +12,11 @@ namespace GDUTSharp.SourceGen.Generators
     [Generator]
     public class Gen_OverrideToString : IIncrementalGenerator
     {
-        private static readonly string _attributeFullName = "GDUTSharp.Shared.Attributes.OverrideToString";
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var provider = context.SyntaxProvider.ForAttributeWithMetadataName
                 (
-                    _attributeFullName,
+                    GenConstant.OverrideToString,
                     static (node, token) => node is ClassDeclarationSyntax or StructDeclarationSyntax,
                     (GeneratorAttributeSyntaxContext syntaxContext, CancellationToken token) => GetTypeToGenerate(syntaxContext)
                 ).Where(static m => m is not null);
@@ -30,8 +28,8 @@ namespace GDUTSharp.SourceGen.Generators
             string nameSpace,
             string typeName,
             TypeKind typeKind,
-            ImmutableArray<(string Name, string Type)> propertyInfos,
-            string? displayName = null)
+            ImmutableArray<(string Name, bool IsCollection)> propertyInfos,
+            string? displayName)
         {
             public string Namespace { get; set; } = nameSpace;
             public string TypeName { get; set; } = typeName;
@@ -41,7 +39,7 @@ namespace GDUTSharp.SourceGen.Generators
                 Microsoft.CodeAnalysis.TypeKind.Struct => "struct",
                 _ => throw new InvalidDataException()
             };
-            public ImmutableArray<(string Name, string Type)> PropertyInfos { get; set; } = propertyInfos;
+            public ImmutableArray<(string Name, bool IsCollection)> PropertyInfos { get; set; } = propertyInfos;
             public string DisplayName { get; set; } = displayName ?? typeName;
         }
 
@@ -51,24 +49,73 @@ namespace GDUTSharp.SourceGen.Generators
             var properties = typeSymbol.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
-                .Select(p => (p.Name, p.Type.ToDisplayString()))
+                .Select(p => (p.Name, IsCollectionLike(p.Type, context.SemanticModel.Compilation)))
                 .ToImmutableArray();
+            string? displayName = null;
+            foreach (var attribute in context.Attributes)
+            {
+                if (attribute.ConstructorArguments.Length > 0)
+                {
+                    var arg = attribute.ConstructorArguments[0];
+                    if (arg.Value is string name)
+                    {
+                        displayName = name;
+                        break;
+                    }
+                }
+                foreach (var namedArg in attribute.NamedArguments)
+                {
+                    if (namedArg.Key == "DisplayName" &&
+                        namedArg.Value.Value is string name)
+                    {
+                        displayName = name;
+                        break;
+                    }
+                }
+
+                if (displayName is not null)
+                    break;
+            }
             return new TypeToGenerate(
                 typeSymbol.ContainingNamespace.ToDisplayString(),
                 typeSymbol.Name,
                 typeSymbol.TypeKind,
-                properties);
+                properties,
+                displayName);
+        }
+
+        private static bool IsCollectionLike(ITypeSymbol type, Compilation compilation)
+        {
+            if (type.SpecialType == SpecialType.System_String) return false;
+            if (type is IArrayTypeSymbol) return true;
+            var iEnumerableT = compilation.GetTypeByMetadataName(GenConstant.IEnumerableT);
+            var iEnumerable = compilation.GetTypeByMetadataName(GenConstant.IEnumerable);
+            foreach (var item in type.AllInterfaces)
+            {
+                var symbol = item.OriginalDefinition;
+                if (symbol is null) continue;
+                if (SymbolEqualityComparer.Default.Equals(symbol, iEnumerableT)
+                    || SymbolEqualityComparer.Default.Equals(symbol, iEnumerable)) return true;
+            }
+            return false;
         }
 
         private static void ExecuteGeneration(SourceProductionContext context, TypeToGenerate? typeInfo)
         {
             if (typeInfo is null) return;
             var sb = new StringBuilder();
-            sb.AppendLine($"            {typeInfo.DisplayName}:");
+            sb.Append($"            {typeInfo.DisplayName}:");
             for (int i = 0; i < typeInfo.PropertyInfos.Length; i++)
             {
-                var (Name, _) = typeInfo.PropertyInfos[i];
-                sb.AppendLine($"              - {Name}:{{{Name}}}");
+                var (name, isCollection) = typeInfo.PropertyInfos[i];
+                if (isCollection)
+                {
+                    sb.Append($$"""{{"\n"}}              - {{name}}:[{string.Join(",", {{name}})}]""");
+                }
+                else
+                {
+                    sb.Append($$"""{{"\n"}}              - {{name}}:{{{name}}}""");
+                }
             }
             var content = sb.ToString();
             sb.Clear();
@@ -78,7 +125,7 @@ namespace GDUTSharp.SourceGen.Generators
                 {
                     partial {{typeInfo.TypeKind}} {{typeInfo.TypeName}}
                     {
-                        /// <summary>由 GDUTSharp.SourceGen 自动覆写</summary>
+                        /// <summary>此 <see cref="ToString"/> 已由 GDUTSharp.SourceGen 自动覆写</summary>
                         public override string ToString() {
                             return $"""
                 {{content}}

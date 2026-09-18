@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Net;
+using System.Text.Json.Serialization;
 using GDUTSharp.Shared.Json;
 
 namespace GDUTSharp.Shared.Type.DTO;
@@ -88,7 +89,7 @@ public class LessonDto
             Date = dto.pkrq,
             LessonSequence = dto.kxh,
             LessonType = dto.jxhjmc,
-            Profile = dto.sknrjj,
+            Profile = WebUtility.HtmlDecode(dto.sknrjj),
             Term = dto.xnxqdm,
         };
     }

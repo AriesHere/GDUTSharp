@@ -1,6 +1,6 @@
 # GDUTSharp
 
-受 [gdutday/gdutday-wechat3.0-java](https://github.com/gdutday/gdutday-wechat3.0-java) 启发而开发的一个能便捷地从广东工业大学各系统中获取数据的 C# 库，以便于后续开发  
+受 [gdutday/gdutday-wechat3.0-java](https://github.com/gdutday/gdutday-wechat3.0-java) 启发而开发的一个能便捷地从广东工业大学各系统中获取数据的 C# 库  
 目前仅支持本科生相关的部分  
 
 ## 功能
@@ -29,7 +29,7 @@ GDUTSharp.Extra:
 
 开发计划: [TODO](TODO.md)
 
-## 示例  
+## 使用示例  
 ```C#
 using GDUTSharp.Extra;
 using GDUTSharp.Interfaces;
@@ -42,61 +42,43 @@ using Microsoft.Extensions.Logging;
 using Ical.Net;
 using Ical.Net.DataTypes;
 
-namespace GDUTSharp.Example;
-
-public class Program
-{
-    public static IHost? AppHost = null;
-
-    public static async Task Main(string[] args)
+// 注册到 DI 容器中
+IHost AppHost = Host.CreateDefaultBuilder()
+    .ConfigureServices((context, services) =>
     {
-        // 注册到 DI 容器中
-        AppHost = Host.CreateDefaultBuilder()
-            .ConfigureServices((context, services) =>
-            {
-                services.AddScoped<IAuthService, AuthService>();
-                services.AddScoped<ILibraryService, LibraryService>();
-                services.AddScoped<IJXFWService, JXFWService>();
-                services.AddSingleton<ISecurityService, SecurityService>();
-                // 使用此方法以自动完成对CommonClient的所有配置
-                services.AddCommonClient(context.Configuration);
-            })
-            .Build();
-        AppHost.RunAsync();
+        // 如果需要隔离多用户，请 AddScoped
+        services.AddSingleton<INoticeService, NoticeService>();
+        services.AddSingleton<IAuthService, AuthService>();
+        services.AddSingleton<ILibraryService, LibraryService>();
+        services.AddSingleton<IJXFWService, JXFWService>();
+        services.AddSingleton<ISecurityService, SecurityService>();
+        // 使用此方法以自动完成对CommonClient的所有配置
+        services.AddCommonClient(context.Configuration);
+    })
+    .Build();
+AppHost.RunAsync();
 
-        // 这里填充学号和密码
-        LoginInfo testLoginInfo = new() { UserName = "", Password = "" };
+var logger = AppHost.Services.GetRequiredService<ILogger<Program>>();
+var jxfw = AppHost.Services.GetRequiredService<IJXFWService>();
 
-        var sc = AppHost.Services.GetRequiredService<IServiceScopeFactory>();
-        using (var scope = sc.CreateScope())
+// 这里填充学号和密码
+LoginInfo testLoginInfo = new() { UserName = "", Password = "" };
+var r = await jxfw.Login(testLoginInfo);
+logger.LogCritical("登录结果:{Result}", r); // 自行处理登录错误时的情况
+var term = jxfw.GetTerm().Result;   // 获取学期
+if (term is not null && await jxfw.GetLessons(term) is List<Lesson> lessons)
+{
+    // 以下是 GDUTSharp.Extra 的功能之一
+    // 导出课程为 iCalendar 文件以便于导入其它日历程序中
+    await File.WriteAllTextAsync("path/to/file",
+        lessons.ToCalendarString(new ExtraExtensions.ICalConvertContext()
         {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            var jxfw = scope.ServiceProvider.GetRequiredService<IJXFWService>();
-
-            // 自行补充学号密码错误时的处理逻辑
-            var loginResult = await jxfw.Login(testLoginInfo);
-            logger.LogInformation("登录结果:{Result}", loginResult);
-
-            // 获取学期
-            var term = jxfw.GetTerm().Result;
-            if (term is not null
-                && await jxfw.GetLessons(term) is List<Lesson> lessons)
+            Alarm = new()
             {
-                // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入到 outlook 日历或 Google 日历
-                await File.WriteAllTextAsync("path/to/file",
-                    lessons.ToCalendarString(new ExtraExtensions.ICalConvertContext()
-                    {
-                        Alarm = new()
-                        {
-                            Trigger = new(new Duration(minutes: -30)),
-                            Description = "课程",
-                            Action = AlarmAction.Display
-                        },
-                        IsMergeIfContinuous = true,
-                    }
-                    ));
-            }
-        }
-    }
+                Trigger = new(new Duration(minutes: -30)),
+                Action = AlarmAction.Display
+            },
+            IsMergeIfContinuous = true,
+        }));
 }
 ```

@@ -16,12 +16,17 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     protected readonly ICommonClient _client = client;
     protected readonly ISecurityService _security = security;
 
+    /// <remarks>TODO: 不知为何，使用随机生成的 iv 有概率登录/认证失败</remarks>
+    protected readonly byte[] INIT_VECTOR = "Jisniwqjwqjwqjww".ToBytes();
+
     /// <summary>附加前缀</summary>
-    /// <remarks>TODO: 不知为何，使用随机前缀时会出问题，后面再看看</remarks>
+    /// <remarks>TODO: 不知为何，使用随机前缀时会出问题</remarks>
     protected virtual byte[] PrefixProcess(string raw) => [.."J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1".ToBytes(), ..raw.ToBytes()];
 
     public async virtual Task<HttpResponseMessage?> LoginAndAuth(IAuthService.SupportedServices? service = null, LoginInfo ? loginInfo = null)
     {
+        HttpRequestMessage? request = null;
+        HttpResponseMessage? response = null;
         try
         {
             var url = service switch
@@ -30,8 +35,9 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                 IAuthService.SupportedServices.LIBRARY => GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.LIBRARY_LOGIN,
                 _ => GDUTConstant.AUTHSERVER_LOGIN,
             };
-            using var request = new HttpRequestMessage(HttpMethod.Post, url);
-            HttpResponseMessage response = await _client.SendAsync(request);
+            request = new HttpRequestMessage(HttpMethod.Post, url);
+            response = await _client.SendAsync(request);
+            request.Dispose();
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -63,14 +69,14 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                     formData[""] = pwdEncryptSalt;
                     formData["username"] = loginInfo.UserName;
                     formData["password"] = Convert.ToBase64String(
-                        _security.CbcEncrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), _security.GenIV()));
+                        _security.AesCbcEncrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), INIT_VECTOR));
 
-                    using var request2 = ICommonClient.CreateRequest(
+                    request = ICommonClient.CreateRequest(
                         HttpMethod.Post,
                         GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.UNDER_GRADUATE_LOGIN,
                         formData,
                         GDUTConstant.UNDER_GRADUATE_LOGIN);
-                    response = await _client.SendAsync(request2);
+                    response = await _client.SendAsync(request);
                 }
             }
             else
@@ -87,8 +93,9 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                     break;
                 if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i + 1, location);
                 response.Dispose();
-                using var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
-                response = await _client.SendAsync(redirectRequest);
+                request = new HttpRequestMessage(HttpMethod.Get, location);
+                response = await _client.SendAsync(request);
+                request.Dispose();
             }
 
             return response;
@@ -97,6 +104,10 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         {
             if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证或登录异常。 {Exception}", e);
             return null;
+        }
+        finally
+        {
+            request?.Dispose();
         }
     }
 
@@ -131,11 +142,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
             using HttpRequestMessage request = new(HttpMethod.Get, GDUTConstant.AUTHSERVER_CHECK_CAPTCHA_PREFIX + username);
             using HttpResponseMessage response = await _client.SendAsync(request);
             var r = await response.Content.ReadAsStringAsync();
-            if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("检查是否需要验证码返回的原始内容：\n{r}", r);
-            // 返回内容： {"isNeed":false} 或 {"isNeed":true}
-            // 为它专门写个类太麻烦了，就这样吧，索引越界什么的交给 try-catch 处理
-            if (r[4] != 'N') throw new InvalidDataException($"返回内容为 {r} ，与预期不一致");
-            return r[^3] == 'u';
+            return r.Contains("true");
         }
         catch (Exception e)
         {
@@ -166,7 +173,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         try
         {
             string json = JsonSerializer.Serialize(payload, AppJsonContext.Context.SliderPayloadDto);
-            string sign = Convert.ToBase64String(_security.CbcEncrypt(this.PrefixProcess(json), captcha.SmallImage.ToBytes()[^16..], _security.GenIV()));
+            string sign = Convert.ToBase64String(_security.AesCbcEncrypt(this.PrefixProcess(json), captcha.SmallImage.ToBytes()[^16..], _security.GenIV()));
             var content = new Dictionary<string, string> { {"sign", sign} };
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.AUTHSERVER_CAPTCHA_VERIFY, content);
             using var response = await _client.SendAsync(request);

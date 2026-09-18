@@ -10,7 +10,7 @@ namespace GDUTSharp.Services
 
         public virtual byte[] GenIV() => RandomNumberGenerator.GetBytes(16);
 
-        public virtual byte[] CbcEncrypt(byte[] plaintext, byte[] key, byte[] iv)
+        public virtual byte[] AesCbcEncrypt(byte[] plaintext, byte[] key, byte[] iv)
         {
             try
             {
@@ -29,7 +29,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public virtual byte[] CbcDecrypt(byte[] cipherText, byte[] key, byte[] iv)
+        public virtual byte[] AesCbcDecrypt(byte[] cipherText, byte[] key, byte[] iv)
         {
             try
             {

@@ -1,9 +1,9 @@
-﻿#pragma warning disable IDE1006 // Naming Styles
-
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using GDUTSharp.Shared.Json;
 
 namespace GDUTSharp.Shared.Type.DTO;
+
+#pragma warning disable IDE1006 // Naming Styles
 
 public class NoticeDtoCollection
 {
