@@ -2,6 +2,9 @@
 
 public static class GDUTConstant
 {
+    /// <summary>本项目（GDUTSharp）的仓库地址</summary>
+    public const string GDUTSHARP_REPO = "https://github.com/AriesHere/GDUTSharp";
+
     #region 统一认证中心
 
     public const string AUTHSERVER_LOGIN = "https://authserver.gdut.edu.cn/authserver/login?type=userNameLogin";

@@ -1,12 +1,13 @@
 ﻿using System.Net;
+using ClosedXML.Excel;
 using GDUTSharp.Interfaces;
+using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using HtmlAgilityPack;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
 using Ical.Net.Serialization;
-using MiniExcelLibs;
 
 namespace GDUTSharp.Extra;
 
@@ -228,6 +229,61 @@ public static class ExtraExtensions
 
         public async Task WriteAsICS(string path, ICalConvertContext context) =>
             await File.WriteAllTextAsync(path, scheduleList.ToCalendarString(context));
+    }
+
+    // List<CourseSel>
+    extension(List<CourseSel> courseSels)
+    {
+        /// <summary>
+        /// 导出为 xlsx 文件
+        /// </summary>
+        public void Export(string path)
+        {
+            var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("选课数据");
+            // 填充数据
+            var header = new string[] {
+                "课程任务代码",
+                "课程大类",
+                "课程分类",
+                "培养项目名称",
+                "课程名称",
+                "学时",
+                "学分",
+                "教师",
+                "排课人数",
+                "已选人数"};
+            ws.Cell(1, 1).InsertData(header, true);
+            ws.Cell(1, header.Length + 2).Value = "数据通过 GDUTSharp.Extra 从教学服务系统导出，一切以教学服务系统为准";
+            ws.Cell(2, header.Length + 2).Value = "Powered by GDUTSharp";
+            ws.Cell(2, header.Length + 2).SetHyperlink(new(GDUTConstant.GDUTSHARP_REPO));
+            int lastRowIndex = 1;
+            for (; lastRowIndex < courseSels.Count + 1; lastRowIndex++)
+            {
+                var item = courseSels[lastRowIndex - 1];
+                var data = new object[] {
+                    item.CourseCode,
+                    item.Type,
+                    item.Category,
+                    item.ProgramName,
+                    item.Name,
+                    item.ClassHour,
+                    item.Credit,
+                    item.Teacher,
+                    item.StudentsCount,
+                    item.EnrolledCount};
+                ws.Cell(lastRowIndex + 1, 1).InsertData(data, true);
+            }
+            // 设置样式
+            var headerRange = ws.Range(1, 1, 1, header.Length);
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+            // ClosedXML 的自适应功能对中文支持有 bug,这里暂时注释掉，直至修复
+            // ws.Columns("A:J").AdjustToContents(1);
+            var dataRange = ws.Range(1, 1, lastRowIndex, header.Length);
+            dataRange.SetAutoFilter();
+            wb.SaveAs(path);
+        }
     }
 
     // IDataService

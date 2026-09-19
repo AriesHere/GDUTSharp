@@ -7,7 +7,7 @@ public partial class CourseSel
     public string CourseCode { get; set; } = string.Empty;
 
     /// <summary>排课人数</summary>
-    public string StudentsCount { get; set; } = string.Empty;
+    public int StudentsCount { get; set; }
 
     /// <summary>课程简介</summary>
     public string Profile { get; set; } = string.Empty;

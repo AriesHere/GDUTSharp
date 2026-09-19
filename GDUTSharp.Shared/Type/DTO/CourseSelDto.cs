@@ -15,7 +15,8 @@ public class CourseSelDto
     public string kcrwdm { get; set; } = string.Empty;
 
     /// <summary>排课人数</summary>
-    public string pkrs { get; set; } = string.Empty;
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public int pkrs { get; set; }
 
     /// <summary>课程简介</summary>
     public string kcptdm { get; set; } = string.Empty;

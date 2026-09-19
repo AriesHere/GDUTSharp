@@ -24,8 +24,9 @@ GDUTSharp (保证支持 AOT):
 
 GDUTSharp.Extra:
 - 为部分功能提供更稳健的实现
-- 读取从教学服务中心导出的数据
+- 读取直接从教学服务中心导出的数据
 - 将课表信息和考试安排信息输出为 [iCalendar](https://icalendar.org/) 文件
+- 将选课数据导出为 xlsx 文件
 
 开发计划: [TODO](TODO.md)
 
