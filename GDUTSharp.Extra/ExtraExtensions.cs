@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using ClosedXML.Excel;
 using GDUTSharp.Interfaces;
-using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using HtmlAgilityPack;
@@ -180,6 +179,51 @@ public static class ExtraExtensions
                 });
             }
         }
+
+        /// <summary>
+        /// 导出为 xlsx 文件
+        /// </summary>
+        public void Export(string path, bool isAdjustToContents = true)
+        {
+            var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("课程数据");
+            var header = new string[] {
+                "学期",
+                "课程名称",
+                "教师",
+                "教学班",
+                "日期",
+                "周次",
+                "星期",
+                "节次",
+                "课序",
+                "教学环节",
+                "教学地点",
+                "简介",};
+            static IList<object> GetContent(Lesson l) =>
+                [
+                    l.Term,
+                    l.Name,
+                    l.Teacher,
+                    string.Join(',', l.ClassName),
+                    l.Date,
+                    l.Week,
+                    l.DayOfWeek,
+                    string.Join(',', l.Sessions),
+                    l.LessonSequence,
+                    l.LessonType,
+                    l.Location,
+                    l.Profile,
+                ];
+            ws.FillDataToWrokSheet<Lesson>(
+                Helper.WSDesc,
+                new(header, XLColor.LightBlue, true),
+                new(GetContent, lessonList),
+                isAdjustToContents,
+                true,
+                isAdjustToContents ? "SimSun" : null);
+            wb.SaveAs(path);
+        }
     }
 
     // ExamSchedule
@@ -229,6 +273,53 @@ public static class ExtraExtensions
 
         public async Task WriteAsICS(string path, ICalConvertContext context) =>
             await File.WriteAllTextAsync(path, scheduleList.ToCalendarString(context));
+
+        /// <summary>
+        /// 导出为 xlsx 文件
+        /// </summary>
+        public void Export(string path, bool isAdjustToContents = true)
+        {
+            var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("考试安排数据");
+            var header = new string[] {
+                "课程名称",
+                "校区",
+                "地点",
+                "监考老师",
+                "日期",
+                "周次",
+                "星期",
+                "开始时间",
+                "结束时间",
+                "考试类别",
+                "安排类型",
+                "考试形式",
+                "试卷编号",};
+            static IList<object> GetContent(ExamSchedule es) =>
+                [
+                    es.Name,
+                    es.Campus,
+                    es.Location,
+                    string.Join(',', es.Teachers),
+                    es.Date,
+                    es.Week,
+                    es.DayOfWeek,
+                    es.StartTime,
+                    es.EndTime,
+                    es.ExamType,
+                    es.ScheduleType,
+                    es.Format,
+                    es.ExamPaperNumber,
+                ];
+            ws.FillDataToWrokSheet<ExamSchedule>(
+                Helper.WSDesc,
+                new(header, XLColor.LightBlue, true),
+                new(GetContent, scheduleList),
+                isAdjustToContents,
+                true,
+                isAdjustToContents ? "SimSun" : null);
+            wb.SaveAs(path);
+        }
     }
 
     // List<CourseSel>
@@ -237,11 +328,10 @@ public static class ExtraExtensions
         /// <summary>
         /// 导出为 xlsx 文件
         /// </summary>
-        public void Export(string path)
+        public void Export(string path, bool isAdjustToContents = true)
         {
             var wb = new XLWorkbook();
             var ws = wb.Worksheets.Add("选课数据");
-            // 填充数据
             var header = new string[] {
                 "课程任务代码",
                 "课程大类",
@@ -252,36 +342,27 @@ public static class ExtraExtensions
                 "学分",
                 "教师",
                 "排课人数",
-                "已选人数"};
-            ws.Cell(1, 1).InsertData(header, true);
-            ws.Cell(1, header.Length + 2).Value = "数据通过 GDUTSharp.Extra 从教学服务系统导出，一切以教学服务系统为准";
-            ws.Cell(2, header.Length + 2).Value = "Powered by GDUTSharp";
-            ws.Cell(2, header.Length + 2).SetHyperlink(new(GDUTConstant.GDUTSHARP_REPO));
-            int lastRowIndex = 1;
-            for (; lastRowIndex < courseSels.Count + 1; lastRowIndex++)
-            {
-                var item = courseSels[lastRowIndex - 1];
-                var data = new object[] {
-                    item.CourseCode,
-                    item.Type,
-                    item.Category,
-                    item.ProgramName,
-                    item.Name,
-                    item.ClassHour,
-                    item.Credit,
-                    item.Teacher,
-                    item.StudentsCount,
-                    item.EnrolledCount};
-                ws.Cell(lastRowIndex + 1, 1).InsertData(data, true);
-            }
-            // 设置样式
-            var headerRange = ws.Range(1, 1, 1, header.Length);
-            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
-            // ClosedXML 的自适应功能对中文支持有 bug,这里暂时注释掉，直至修复
-            // ws.Columns("A:J").AdjustToContents(1);
-            var dataRange = ws.Range(1, 1, lastRowIndex, header.Length);
-            dataRange.SetAutoFilter();
+                "已选人数",};
+            static IList<object> GetContent(CourseSel cs) =>
+                [
+                    cs.CourseCode,
+                    cs.Type,
+                    cs.Category,
+                    cs.ProgramName,
+                    cs.Name,
+                    cs.ClassHour,
+                    cs.Credit,
+                    cs.Teacher,
+                    cs.StudentsCount,
+                    cs.EnrolledCount
+                ];
+            ws.FillDataToWrokSheet<CourseSel>(
+                Helper.WSDesc,
+                new(header, XLColor.LightBlue, true),
+                new(GetContent, courseSels),
+                isAdjustToContents,
+                true,
+                isAdjustToContents ? "SimSun" : null);
             wb.SaveAs(path);
         }
     }

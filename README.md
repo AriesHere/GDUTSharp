@@ -1,9 +1,11 @@
 # GDUTSharp
 
-受 [gdutday/gdutday-wechat3.0-java](https://github.com/gdutday/gdutday-wechat3.0-java) 启发而开发的一个能便捷地从广东工业大学各系统中获取数据的 C# 库  
+受 [gdutday/gdutday-wechat3.0-java](https://github.com/gdutday/gdutday-wechat3.0-java) 启发而开发的一个从广东工业大学各系统中获取数据的 C# 库  
 目前仅支持本科生相关的部分  
 
 ## 功能
+
+开发计划: [TODO](TODO.md)
 
 GDUTSharp (保证支持 AOT):
 - 统一认证中心
@@ -26,9 +28,7 @@ GDUTSharp.Extra:
 - 为部分功能提供更稳健的实现
 - 读取直接从教学服务中心导出的数据
 - 将课表信息和考试安排信息输出为 [iCalendar](https://icalendar.org/) 文件
-- 将选课数据导出为 xlsx 文件
-
-开发计划: [TODO](TODO.md)
+- 将课程数据，考试安排数据和选课数据导出为 xlsx 文件
 
 ## 使用示例  
 ```C#
