@@ -51,6 +51,13 @@ public static class GDUTConstant
     /// <summary>本科生获取考级成绩</summary>
     public const string UNDER_GRADING_EXAM_SCORE = "https://jxfw.gdut.edu.cn/xskjcjxx!getDataList.action";
 
+    /// <summary>本科生获取可用教学计划</summary>
+    public const string UNDER_TEACHING_PLAN_AVALIABLE = "https://jxfw.gdut.edu.cn/xsjxjhxx!getDataList1.action";
+
+    /// <summary>本科生获取教学计划详情</summary>
+    /// <remarks>在末尾补充教学计划代码</remarks>
+    public const string UNDER_TEACHING_PLAN_DETAIL = "https://jxfw.gdut.edu.cn/xsjxjhxx!getKcDataList.action?jxjhdm=";
+
     #endregion
 
     #region 图书馆

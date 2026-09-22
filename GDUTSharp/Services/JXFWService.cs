@@ -249,4 +249,50 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
             return null;
         }
     }
+
+    public async Task<List<AvaliableTeachingPlan>?> GetTeachingPlanList()
+    {
+        try
+        {
+            var requestContent = new Dictionary<string, string>
+                {
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "sort", "nd" },
+                    { "order", "asc" },
+                };
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_TEACHING_PLAN_AVALIABLE, requestContent, GDUTConstant.UNDER_TEACHING_PLAN_AVALIABLE);
+            using HttpResponseMessage response = await _client.SendAsync(request);
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AvaliableTeachingPlanDtoCollection);
+            return result;
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求教学计划列表异常。 {Exception}", e);
+            return null;
+        }
+    }
+
+    public async Task<List<TeachingPlan>?> GetTeachingPlan(string planCode)
+    {
+        try
+        {
+            var requestContent = new Dictionary<string, string>
+                {
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "sort", "kkxqmc1" },
+                    { "order", "asc" },
+                };
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_TEACHING_PLAN_DETAIL + planCode, requestContent, GDUTConstant.UNDER_TEACHING_PLAN_DETAIL);
+            using HttpResponseMessage response = await _client.SendAsync(request);
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.TeachingPlanDtoCollection);
+            return result;
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求教学计划异常。 {Exception}", e);
+            return null;
+        }
+    }
 }

@@ -28,12 +28,14 @@
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\GradingExamScoreDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\LessonDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\NoticeDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\TeachingPlanDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\ExamSchedule.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\GradingExamScore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\Lesson.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\CourseScore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\Notice.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\Sessions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\TeachingPlan.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\User.cs" />
   </ItemGroup>
 </Project>

@@ -29,4 +29,10 @@ public interface IJXFWService
 
     /// <summary>考级成绩</summary>
     public Task<List<GradingExamScore>?> GetGradingExamScore();
+
+    /// <summary>获取教学计划列表</summary>
+    public Task<List<AvaliableTeachingPlan>?> GetTeachingPlanList();
+
+    /// <summary>获取教学计划详情</summary>
+    public Task<List<TeachingPlan>?> GetTeachingPlan(string teachingPlanCode);
 }
