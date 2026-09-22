@@ -58,6 +58,9 @@ public static class GDUTConstant
     /// <remarks>在末尾补充教学计划代码</remarks>
     public const string UNDER_TEACHING_PLAN_DETAIL = "https://jxfw.gdut.edu.cn/xsjxjhxx!getKcDataList.action?jxjhdm=";
 
+    /// <summary>本科生获取学期注册信息</summary>
+    public const string UNDER_SEMESTER_REG = "https://jxfw.gdut.edu.cn/xsxqzccx!getDataList.action";
+
     #endregion
 
     #region 图书馆

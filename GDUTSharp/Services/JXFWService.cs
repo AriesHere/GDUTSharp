@@ -295,4 +295,27 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
             return null;
         }
     }
+
+    public async Task<List<SemesterReg>?> GetSemesterRegistration()
+    {
+        try
+        {
+            var requestContent = new Dictionary<string, string>
+                {
+                    { "page", "1" },
+                    { "rows", "300" },
+                    { "sort", "xnxqmc" },
+                    { "order", "asc" },
+                };
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_SEMESTER_REG, requestContent, GDUTConstant.UNDER_SEMESTER_REG);
+            using HttpResponseMessage response = await _client.SendAsync(request);
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.SemesterRegDtoCollection);
+            return result;
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求教学计划异常。 {Exception}", e);
+            return null;
+        }
+    }
 }

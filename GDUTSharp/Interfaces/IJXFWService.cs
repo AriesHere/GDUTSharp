@@ -35,4 +35,7 @@ public interface IJXFWService
 
     /// <summary>获取教学计划详情</summary>
     public Task<List<TeachingPlan>?> GetTeachingPlan(string teachingPlanCode);
+
+    /// <summary>获取学期注册信息</summary>
+    public Task<List<SemesterReg>?> GetSemesterRegistration();
 }

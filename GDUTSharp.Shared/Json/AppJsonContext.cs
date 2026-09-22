@@ -45,6 +45,11 @@ namespace GDUTSharp.Shared.Json;
 [JsonSerializable(typeof(AvaliableTeachingPlanDtoCollection))]
 [JsonSerializable(typeof(List<AvaliableTeachingPlan>))]
 
+[JsonSerializable(typeof(SemesterReg))]
+[JsonSerializable(typeof(SemesterRegDto))]
+[JsonSerializable(typeof(SemesterRegDtoCollection))]
+[JsonSerializable(typeof(List<SemesterReg>))]
+
 [JsonSerializable(typeof(BookInfo))]
 [JsonSerializable(typeof(BookInfoDto))]
 [JsonSerializable(typeof(BorrowedBookDtoData))]

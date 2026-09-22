@@ -1,6 +1,9 @@
-﻿namespace GDUTSharp.Shared.Type;
+﻿using GDUTSharp.Shared.Attributes;
 
-public class AvaliableTeachingPlan
+namespace GDUTSharp.Shared.Type;
+
+[OverrideToString]
+public partial class AvaliableTeachingPlan
 {
     /// <summary>教学计划代码</summary>
     public string Code { get; set; } = string.Empty;
@@ -14,7 +17,8 @@ public class AvaliableTeachingPlan
     public string Target { get; set; } = string.Empty;
 }
 
-public class TeachingPlan
+[OverrideToString]
+public partial class TeachingPlan
 {
     /// <summary>模块方向</summary>
     public string ProgramName { get; set; } = string.Empty;
