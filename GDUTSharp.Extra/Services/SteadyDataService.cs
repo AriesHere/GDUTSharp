@@ -23,9 +23,9 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
         {
             var url = service switch
             {
-                IAuthService.SupportedServices.JXFW => GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.UNDER_GRADUATE_LOGIN,
-                IAuthService.SupportedServices.LIBRARY => GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.LIBRARY_LOGIN,
-                _ => GDUTConstant.AUTHSERVER_LOGIN,
+                IAuthService.SupportedServices.JXFW => GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
+                IAuthService.SupportedServices.LIBRARY => GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.LIBRARY_LOGIN,
+                _ => GSConst.AUTHSERVER_LOGIN,
             };
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
             HttpResponseMessage response = await _client.SendAsync(request);
@@ -61,16 +61,15 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
                             pwdEncryptSalt = value;
                     }
 
-                    formData[""] = pwdEncryptSalt;
                     formData["username"] = loginInfo.UserName;
                     formData["password"] = Convert.ToBase64String(
-                        _security.AesCbcEncrypt(base.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), INIT_VECTOR));
+                        _security.AesCbcEncrypt(base.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
 
                     using var request2 = ICommonClient.CreateRequest(
                         HttpMethod.Post,
-                        GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.UNDER_GRADUATE_LOGIN,
+                        GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
                         formData,
-                        GDUTConstant.UNDER_GRADUATE_LOGIN);
+                        GSConst.UNDER_GRADUATE_LOGIN);
                     response = await _client.SendAsync(request2);
                 }
             }

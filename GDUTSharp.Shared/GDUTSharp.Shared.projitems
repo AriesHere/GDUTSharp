@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\OverrideToStringAttriubte.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)GDUTConstant.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GSConst.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\AppJsonContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\ClassNameConverter.cs" />
@@ -38,6 +38,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Type\SemesterReg.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\Sessions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\TeachingPlan.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\Term.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\User.cs" />
   </ItemGroup>
 </Project>

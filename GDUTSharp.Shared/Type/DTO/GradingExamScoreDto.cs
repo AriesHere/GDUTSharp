@@ -2,9 +2,9 @@
 
 #pragma warning disable IDE1006 // Naming Styles
 
-public class GradingExamScoreDtoCollection : DtoCollectionBase<GradingExamScoreDto>
+public class GradingExamScoreDtoCollection : DtoCollectionBase<GradingExamScore, GradingExamScoreDto>
 {
-    public static implicit operator List<GradingExamScore>(GradingExamScoreDtoCollection? collection) => collection is null ? [] : [.. collection];
+    public override List<GradingExamScore> Convert() => [..this];
 }
 
 public class GradingExamScoreDto
@@ -52,7 +52,7 @@ public class GradingExamScoreDto
     {
         var r = new GradingExamScore
         {
-            Term = dto.xnxqmc,
+            Term = new(dto.xnxqmc),
             GradingExamCode = dto.kjkcbh,
             GradingExamName = dto.kjkcmc,
             Date = dto.kssj,

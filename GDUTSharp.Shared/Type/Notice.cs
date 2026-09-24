@@ -37,4 +37,8 @@ public partial class Notice
     public string TypeName { get; set; } = string.Empty;
 
     public int ReadCount { get; set; }
+
+    public string GetNoticeUrl() => GSConst.NOTICE_DETAIL + this.Id;
+
+    public string GetImageUrl() => GSConst.NOTICE_BASE + this.ImageUrl;
 }

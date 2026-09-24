@@ -5,9 +5,9 @@ namespace GDUTSharp.Shared.Type.DTO;
 
 #pragma warning disable IDE1006 // Naming Styles
 
-public class ExamScheduleDtoCollection : DtoCollectionBase<ExamScheduleDto>
+public class ExamScheduleDtoCollection : DtoCollectionBase<ExamSchedule, ExamScheduleDto>
 {
-    public static implicit operator List<ExamSchedule>(ExamScheduleDtoCollection? collection) => collection is null ? [] : [.. collection];
+    public override List<ExamSchedule> Convert() => [.. this];
 }
 
 /// <remarks>

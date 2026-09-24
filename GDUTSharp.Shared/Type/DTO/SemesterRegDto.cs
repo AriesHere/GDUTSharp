@@ -2,9 +2,9 @@
 
 #pragma warning disable IDE1006 // Naming Styles
 
-public class SemesterRegDtoCollection : DtoCollectionBase<SemesterRegDto>
+public class SemesterRegDtoCollection : DtoCollectionBase<SemesterReg, SemesterRegDto>
 {
-    public static implicit operator List<SemesterReg>(SemesterRegDtoCollection? collection) => collection is null ? [] : [.. collection];
+    public override List<SemesterReg> Convert() => [..this];
 }
 
 public class SemesterRegDto
@@ -19,7 +19,7 @@ public class SemesterRegDto
     {
         return new SemesterReg
         {
-            Term = dto.xnxqmc,
+            Term = new(dto.xnxqmc),
             Status = dto.zczt,
         };
     }

@@ -1,17 +1,67 @@
 ﻿using System.Net.Http.Json;
+using System.Text.Json.Serialization.Metadata;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
+using GDUTSharp.Shared.Type.DTO;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GDUTSharp.Services;
 
-public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAuthService authService) : IJXFWService
+public class JXFWServiceOptions
+{
+    /// <summary>每次请求时请求的数据条目数</summary>
+    public int ItemPerRequest { get; set; } = 300;
+
+    /// <summary>请求时最大请求页数</summary>
+    public int MaxPage { get; set; } = 10;
+}
+
+public class JXFWService(
+    IOptions<JXFWServiceOptions> options,
+    ILogger<JXFWService> logger,
+    ICommonClient client,
+    IAuthService authService
+    ) : IJXFWService
 {
     protected readonly ILogger<JXFWService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
+    protected readonly int _maxPage = options.Value.MaxPage;
+    protected readonly int _itemPerRequest = options.Value.ItemPerRequest;
+
+    protected async virtual Task<List<TResult>?> GetData<TResult, TDto, TDtoCollection>(
+        string url,
+        Dictionary<string, string> requestContent,
+        JsonTypeInfo<TDtoCollection> jsonTypeInfo
+        ) where TDtoCollection : DtoCollectionBase<TResult, TDto>
+    {
+        List<TResult>? r = null;
+        requestContent.AddIfNotExist("rows", $"{_itemPerRequest}").AddIfNotExist("page", "1").AddIfNotExist("order", "asc");
+        for (int i = 1; i <= _maxPage; i++)
+        {
+            requestContent["page"] = $"{i}";
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, url, requestContent, url);
+            using HttpResponseMessage response = await _client.SendAsync(request);
+            var temp = await response.Content.ReadFromJsonAsync(jsonTypeInfo);
+            var tempResult = temp?.Convert();
+            if (r is null)
+            {
+                r = tempResult;
+            }
+            else if (tempResult is not null)
+            {
+                r.AddRange(tempResult);
+            }
+            if (tempResult is null || tempResult.Count < _itemPerRequest)
+            {
+                break;
+            }
+        }
+        return r;
+    }
 
     public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
     {
@@ -35,15 +85,15 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
         }
     }
 
-    public async virtual Task<string?> GetTerm()
+    public async virtual Task<Term?> GetTerm()
     {
         try
         {
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_TERM, referer: GDUTConstant.UNDER_TERM);
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_TERM, referer: GSConst.UNDER_TERM);
             using var response = await _client.SendAsync(request);
             string responseContent = await response.Content.ReadAsStringAsync();
             int index = responseContent.IndexOf("selected");
-            return responseContent[(index - 2 - "202502".Length)..(index - 2)];
+            return new(responseContent[(index - 2 - "202502".Length)..(index - 2)]);
             // responseContent 摘要:
             // <option value='202601' >2026秋季</option><option value='202502' selected>2026春季</option><option value='202501' >2025秋季</option>
         }
@@ -54,22 +104,19 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
         }
     }
 
-    public async virtual Task<List<Lesson>?> GetLessons(string term)
+    public async virtual Task<List<Lesson>?> GetLessons(Term term, int? week = null)
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
+            return await GetData<Lesson, LessonDto, LessonDtoCollection>(
+                GSConst.UNDER_LESSONS,
+                new Dictionary<string, string>
                 {
-                    { "xnxqdm", term },
-                    { "zc", "" },
-                    { "page", "1" },
-                    { "rows", "300" },
+                    { "xnxqdm", $"{term.Code6}" },
+                    { "zc", $"{week}" },
                     { "sort", "zc,xq,jcdm" },
-                    { "order", "asc" },
-                };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_LESSONS, requestContent, GDUTConstant.UNDER_LESSONS);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection);
+                },
+                AppJsonContext.Context.LessonDtoCollection);
         }
         catch (Exception e)
         {
@@ -78,21 +125,18 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
         }
     }
 
-    public async virtual Task<List<ExamSchedule>?> GetExamSchedule(string term)
+    public async virtual Task<List<ExamSchedule>?> GetExamSchedule(Term term)
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
+            return await GetData<ExamSchedule, ExamScheduleDto, ExamScheduleDtoCollection>(
+                GSConst.UNDER_EXAM_SCHEDULE,
+                new Dictionary<string, string>
                 {
-                    { "xnxqdm", term },
-                    { "page", "1" },
-                    { "rows", "300" },
+                    { "xnxqdm", $"{term.Code6}" },
                     { "sort", "zc,xq,jcdm2" },
-                    { "order", "asc" },
-                };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_EXAM_SCHEDULE, requestContent, GDUTConstant.UNDER_EXAM_SCHEDULE);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ExamScheduleDtoCollection);
+                },
+                AppJsonContext.Context.ExamScheduleDtoCollection);
         }
         catch (Exception e)
         {
@@ -101,44 +145,37 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
         }
     }
 
-    public async virtual Task<List<CourseScore>?> GetCourseScore(string term)
+    public async virtual Task<List<CourseScore>?> GetCourseScore(Term? term = null)
     {
-        HttpRequestMessage? request = null;
-        HttpResponseMessage? response = null;
         try
         {
             var requestContent = new Dictionary<string, string>
                 {
-                    { "xnxqdm", term },
+                    { "xnxqdm", $"{term?.Code6}" },
                     { "jhlxdm", "" },
-                    { "page", "1" },
-                    { "rows", "300" },
                     { "sort", "xnxqdm" },
-                    { "order", "asc" },
                 };
-            request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_SCORE, requestContent, GDUTConstant.UNDER_COURSE_SCORE);
-            response = await _client.SendAsync(request);
-            request.Dispose();
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection);
-            response.Dispose();
-            if (result != null && term == "")
+            var result = await GetData<CourseScore, CourseScoreDto, CourseScoreDtoCollection>(
+                GSConst.UNDER_COURSE_SCORE,
+                requestContent,
+                AppJsonContext.Context.CourseScoreDtoCollection);
+            if (result != null && term is null)
             {
                 HashSet<string> terms = [];
-                foreach (var item in result.rows)
-                    terms.Add(item.xnxqmc);
+                foreach (var item in result)
+                    terms.Add($"{item.Term.Code6}");
                 foreach (var item in terms)
                 {
-                    requestContent["xnxqdm"] = Helper.TermStringToInt6Digit(item).ToString();
-                    request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_SCORE, requestContent, GDUTConstant.UNDER_COURSE_SCORE);
-                    response = await _client.SendAsync(request);
-                    request.Dispose();
-                    var tempResult = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseScoreDtoCollection);
-                    response.Dispose();
+                    requestContent["xnxqdm"] = item;
+                    var tempResult = await GetData<CourseScore, CourseScoreDto, CourseScoreDtoCollection>(
+                        GSConst.UNDER_COURSE_SCORE,
+                        requestContent,
+                        AppJsonContext.Context.CourseScoreDtoCollection);
                     if (tempResult != null)
                     {
-                        foreach (var scoreItem in tempResult.rows)
+                        foreach (var scoreItem in tempResult)
                         {
-                            if (scoreItem.kcmc == "劳动教育")
+                            if (scoreItem.Name == "劳动教育")
                             {
                                 result.Add(scoreItem);
                                 goto END;
@@ -155,26 +192,16 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
             if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求考试成绩异常。 {Exception}", e);
             return null;
         }
-        finally
-        {
-            request?.Dispose();
-            response?.Dispose();
-        }
     }
 
     public async virtual Task<List<CourseSel>?> GetCourseSelection()
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
-                {
-                    { "page", "1" },
-                    { "rows", "300" },
-                    { "sort", "kcflmc" },
-                };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_SEL, requestContent, GDUTConstant.UNDER_COURSE_SEL);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelDtoCollection);
+            return await GetData<CourseSel, CourseSelDto, CourseSelDtoCollection>(
+                GSConst.UNDER_COURSE_SEL,
+                new Dictionary<string, string> { { "sort", "kcflmc" } },
+                AppJsonContext.Context.CourseSelDtoCollection);
         }
         catch (Exception e)
         {
@@ -187,15 +214,10 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
-                {
-                    { "page", "1" },
-                    { "rows", "300" },
-                    { "sort", "kcflmc" },
-                };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_SEL_ED, requestContent, GDUTConstant.UNDER_COURSE_SEL_ED);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.CourseSelDtoCollection);
+            return await GetData<CourseSel, CourseSelDto, CourseSelDtoCollection>(
+                GSConst.UNDER_COURSE_SEL_ED,
+                new Dictionary<string, string> { { "sort", "kcflmc" } },
+                AppJsonContext.Context.CourseSelDtoCollection);
         }
         catch (Exception e)
         {
@@ -206,19 +228,39 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
 
     public async virtual Task<List<Lesson>?> GetCourseTask(string code)
     {
+        // 它比较特殊，不要使用 GetData() 方法
         try
         {
-            var requestContent = new Dictionary<string, string>
+            List<Lesson>? r = null;
+            var content = new Dictionary<string, string>
                 {
                     { "page", "1" },
-                    { "rows", "300" },
+                    { "rows", $"{_itemPerRequest}" },
                     { "kcrwdm", code },
                     { "sort", "zc,xq,jcdm" },
                     { "order", "asc" },
                 };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_COURSE_TASK, requestContent, GDUTConstant.UNDER_COURSE_TASK);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.LessonDtoCollection);
+            for (int i = 1; i <= _maxPage; i++)
+            {
+                content["page"] = $"{i}";
+                using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_COURSE_TASK, content, GSConst.UNDER_COURSE_TASK);
+                using HttpResponseMessage response = await _client.SendAsync(request);
+                var temp = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLessonDto);
+                List<Lesson>? tempResult = temp is null ? null : [..temp];
+                if (r is null)
+                {
+                    r = tempResult;
+                }
+                else if (tempResult is not null)
+                {
+                    r.AddRange(tempResult);
+                }
+                if (tempResult is null || tempResult.Count < _itemPerRequest)
+                {
+                    break;
+                }
+            }
+            return r;
         }
         catch (Exception e)
         {
@@ -227,21 +269,14 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
         }
     }
 
-    public async Task<List<GradingExamScore>?> GetGradingExamScore()
+    public async virtual Task<List<GradingExamScore>?> GetGradingExamScore()
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
-                {
-                    { "page", "1" },
-                    { "rows", "300" },
-                    { "sort", "xnxqdm,kssj" },
-                    { "order", "asc" },
-                };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_GRADING_EXAM_SCORE, requestContent, GDUTConstant.UNDER_GRADING_EXAM_SCORE);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.GradingExamScoreDtoCollection);
-            return result;
+            return await GetData<GradingExamScore, GradingExamScoreDto, GradingExamScoreDtoCollection>(
+                GSConst.UNDER_GRADING_EXAM_SCORE,
+                new Dictionary<string, string> { { "sort", "xnxqdm,kssj" } },
+                AppJsonContext.Context.GradingExamScoreDtoCollection);
         }
         catch (Exception e)
         {
@@ -250,21 +285,14 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
         }
     }
 
-    public async Task<List<AvaliableTeachingPlan>?> GetTeachingPlanList()
+    public async virtual Task<List<AvaliableTeachingPlan>?> GetTeachingPlanList()
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
-                {
-                    { "page", "1" },
-                    { "rows", "300" },
-                    { "sort", "nd" },
-                    { "order", "asc" },
-                };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_TEACHING_PLAN_AVALIABLE, requestContent, GDUTConstant.UNDER_TEACHING_PLAN_AVALIABLE);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AvaliableTeachingPlanDtoCollection);
-            return result;
+            return await GetData<AvaliableTeachingPlan, AvaliableTeachingPlanDto, AvaliableTeachingPlanDtoCollection>(
+                GSConst.UNDER_TEACHING_PLAN_AVALIABLE,
+                new Dictionary<string, string>{ { "sort", "nd" } },
+                AppJsonContext.Context.AvaliableTeachingPlanDtoCollection);
         }
         catch (Exception e)
         {
@@ -273,21 +301,14 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
         }
     }
 
-    public async Task<List<TeachingPlan>?> GetTeachingPlan(string planCode)
+    public async virtual Task<List<TeachingPlan>?> GetTeachingPlan(string planCode)
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
-                {
-                    { "page", "1" },
-                    { "rows", "300" },
-                    { "sort", "kkxqmc1" },
-                    { "order", "asc" },
-                };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_TEACHING_PLAN_DETAIL + planCode, requestContent, GDUTConstant.UNDER_TEACHING_PLAN_DETAIL);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.TeachingPlanDtoCollection);
-            return result;
+            return await GetData<TeachingPlan, TeachingPlanDto, TeachingPlanDtoCollection>(
+                GSConst.UNDER_TEACHING_PLAN_AVALIABLE,
+                new Dictionary<string, string> { { "sort", "kkxqmc1" } },
+                AppJsonContext.Context.TeachingPlanDtoCollection);
         }
         catch (Exception e)
         {
@@ -296,21 +317,14 @@ public class JXFWService(ILogger<JXFWService> logger, ICommonClient client, IAut
         }
     }
 
-    public async Task<List<SemesterReg>?> GetSemesterRegistration()
+    public async virtual Task<List<SemesterReg>?> GetSemesterRegistration()
     {
         try
         {
-            var requestContent = new Dictionary<string, string>
-                {
-                    { "page", "1" },
-                    { "rows", "300" },
-                    { "sort", "xnxqmc" },
-                    { "order", "asc" },
-                };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.UNDER_SEMESTER_REG, requestContent, GDUTConstant.UNDER_SEMESTER_REG);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.SemesterRegDtoCollection);
-            return result;
+            return await GetData<SemesterReg, SemesterRegDto, SemesterRegDtoCollection>(
+                GSConst.UNDER_SEMESTER_REG,
+                new Dictionary<string, string> { { "sort", "xnxqmc" } },
+                AppJsonContext.Context.SemesterRegDtoCollection);
         }
         catch (Exception e)
         {

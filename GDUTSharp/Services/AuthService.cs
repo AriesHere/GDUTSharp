@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
@@ -15,33 +16,59 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     protected readonly ILogger<AuthService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly ISecurityService _security = security;
+    protected const int IV_LEN = 16;
+    protected const int PREFIX_LEN = 64;
+    protected const string AES_CHARS = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
+    protected const string GET_SALT = "id=\"pwdEncryptSalt\" value=\"";
+    protected const string GET_EXEC = "name=\"execution\" value=\"";
 
-    /// <remarks>TODO: 不知为何，使用随机生成的 iv 有概率登录/认证失败</remarks>
-    protected readonly byte[] INIT_VECTOR = "Jisniwqjwqjwqjww".ToBytes();
+    #region 加密
+
+    protected static byte[] GenIV()
+    {
+        var bytes = new byte[IV_LEN];
+        for (int i = 0; i < IV_LEN; i++)
+        {
+            int index = RandomNumberGenerator.GetInt32(AES_CHARS.Length);
+            bytes[i] = (byte)AES_CHARS[index];
+        }
+        return bytes;
+    }
+
+    protected static byte[] GenPrefix()
+    {
+        var bytes = new byte[PREFIX_LEN];
+        for (int i = 0; i < PREFIX_LEN; i++)
+        {
+            int index = RandomNumberGenerator.GetInt32(AES_CHARS.Length);
+            bytes[i] = (byte)AES_CHARS[index];
+        }
+        return bytes;
+    }
 
     /// <summary>附加前缀</summary>
     /// <remarks>TODO: 不知为何，使用随机前缀时会出问题</remarks>
-    protected virtual byte[] PrefixProcess(string raw) => [.."J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1J69IVxcXqvqNhvk1".ToBytes(), ..raw.ToBytes()];
+    protected virtual byte[] PrefixProcess(string raw) => [..GenPrefix(), ..raw.ToBytes()];
+
+    #endregion
 
     public async virtual Task<HttpResponseMessage?> LoginAndAuth(IAuthService.SupportedServices? service = null, LoginInfo ? loginInfo = null)
     {
         HttpRequestMessage? request = null;
-        HttpResponseMessage? response = null;
         try
         {
             var url = service switch
             {
-                IAuthService.SupportedServices.JXFW => GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.UNDER_GRADUATE_LOGIN,
-                IAuthService.SupportedServices.LIBRARY => GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.LIBRARY_LOGIN,
-                _ => GDUTConstant.AUTHSERVER_LOGIN,
+                IAuthService.SupportedServices.JXFW => GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
+                IAuthService.SupportedServices.LIBRARY => GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.LIBRARY_LOGIN,
+                _ => GSConst.AUTHSERVER_LOGIN,
             };
             request = new HttpRequestMessage(HttpMethod.Post, url);
-            response = await _client.SendAsync(request);
+            HttpResponseMessage response = await _client.SendAsync(request);
             request.Dispose();
 
-            if (response.StatusCode == HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)   // 需要登录
             {
-                // 需要登录
                 if (loginInfo is null)
                 {
                     if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证失败，尝试登录时未给出登录信息");
@@ -51,38 +78,34 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                 {
                     if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在登录并认证");
                     var formData = new Dictionary<string, string>();
-                    string pwdEncryptSalt = string.Empty;
                     string html = await response.Content.ReadAsStringAsync();
                     response.Dispose();
 
-                    // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这
-                    // 样，请使用 GDUTSharp.Extra.SteadyAuthService 中的 LoginAndAuth 方法
-                    Match saltMatch = Helper.Login_SaltRegex().Match(html);
-                    pwdEncryptSalt = saltMatch.Success ? saltMatch.Groups[1].Value : "";
-                    Match execMatch = Helper.Login_ExecRegex().Match(html);
-                    string execution = execMatch.Success ? execMatch.Groups[1].Value : "";
+                    // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这样，
+                    // 请使用 GDUTSharp.Extra.SteadyAuthService 中的 LoginAndAuth 方法
+                    var saltIndex = html.IndexOf(GET_SALT) + GET_SALT.Length;
+                    var pwdEncryptSalt = html[saltIndex..html.IndexOf('"', saltIndex)];
+                    var execIndex = html.IndexOf(GET_EXEC, saltIndex) + GET_EXEC.Length;
+                    var execution = html[execIndex..html.IndexOf('"', execIndex)];
+                    formData["username"] = loginInfo.UserName;
+                    formData["password"] = Convert.ToBase64String(
+                        _security.AesCbcEncrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
+                    formData["captcha"] = "";   // TODO
                     formData["_eventId"] = "submit";
                     formData["cllt"] = "userNameLogin";
                     formData["dllt"] = "generalLogin";
                     formData["lt"] = "";
                     formData["execution"] = execution;
-                    formData[""] = pwdEncryptSalt;
-                    formData["username"] = loginInfo.UserName;
-                    formData["password"] = Convert.ToBase64String(
-                        _security.AesCbcEncrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), INIT_VECTOR));
 
                     request = ICommonClient.CreateRequest(
                         HttpMethod.Post,
-                        GDUTConstant.AUTHSERVER_AUTH_PREFIX + GDUTConstant.UNDER_GRADUATE_LOGIN,
+                        GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
                         formData,
-                        GDUTConstant.UNDER_GRADUATE_LOGIN);
+                        GSConst.UNDER_GRADUATE_LOGIN);
                     response = await _client.SendAsync(request);
                 }
             }
-            else
-            {
-                if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在认证");
-            }
+            else if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在认证");
 
             for (int i = 0; i < 5; i++)
             {
@@ -115,7 +138,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     {
         try
         {
-            using HttpRequestMessage request = new(HttpMethod.Get, GDUTConstant.AUTHSERVER_LOGOUT);
+            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_LOGOUT);
             using HttpResponseMessage response = await _client.SendAsync(request);
             var r = await response.Content.ReadAsStringAsync();
             return r.Contains("注销成功");
@@ -139,7 +162,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     {
         try
         {
-            using HttpRequestMessage request = new(HttpMethod.Get, GDUTConstant.AUTHSERVER_CHECK_CAPTCHA_PREFIX + username);
+            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_CHECK_CAPTCHA_PREFIX + username);
             using HttpResponseMessage response = await _client.SendAsync(request);
             var r = await response.Content.ReadAsStringAsync();
             return r.Contains("true");
@@ -155,7 +178,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     {
         try
         {
-            using HttpRequestMessage request = new(HttpMethod.Get, GDUTConstant.AUTHSERVER_CAPTCHA_GET);
+            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_CAPTCHA_GET);
             using HttpResponseMessage response = await _client.SendAsync(request);
             var r = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AuthServerCaptchaDto);
             if (r is null) return null;
@@ -175,7 +198,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
             string json = JsonSerializer.Serialize(payload, AppJsonContext.Context.SliderPayloadDto);
             string sign = Convert.ToBase64String(_security.AesCbcEncrypt(this.PrefixProcess(json), captcha.SmallImage.ToBytes()[^16..], _security.GenIV()));
             var content = new Dictionary<string, string> { {"sign", sign} };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GDUTConstant.AUTHSERVER_CAPTCHA_VERIFY, content);
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.AUTHSERVER_CAPTCHA_VERIFY, content);
             using var response = await _client.SendAsync(request);
             var r = await response.Content.ReadAsStringAsync();
             return r.Contains("success");

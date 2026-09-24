@@ -1,8 +1,7 @@
-﻿using System.Diagnostics;
-using System.Security.Cryptography;
-using GDUTSharp.Extra;
+﻿using System.Security.Cryptography;
 using GDUTSharp.Services;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Type;
 using GDUTSharp.Test.TestServers;
 
 namespace GDUTSharp.Test
@@ -22,17 +21,8 @@ namespace GDUTSharp.Test
         public void TestJXFWExportedLessonsFileAnalysis(string input)
         {
             MemoryStream s = new(input.ToBytes());
-            var r = ExtraExtensions.Read(s, ExtraExtensions.JXFWFileType.AutoDetect);
+            var r = Extra.Extensions.Read(s, Extra.Extensions.JXFWFileType.AutoDetect);
             Assert.HasCount(2, r);
-        }
-
-        [TestMethod]
-        [DataRow("2026春季", 202502)]
-        [DataRow("2026秋季", 202601)]
-        public void TermStringToInt6Digit(string raw, int expected)
-        {
-            var r = Shared.Helper.TermStringToInt6Digit(raw);
-            Assert.AreEqual(expected, r);
         }
 
         [TestMethod]

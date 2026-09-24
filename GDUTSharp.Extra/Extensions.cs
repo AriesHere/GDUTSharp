@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using ClosedXML.Excel;
+using GDUTSharp.Extra.Types;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
@@ -10,19 +11,13 @@ using Ical.Net.Serialization;
 
 namespace GDUTSharp.Extra;
 
-public static class ExtraExtensions
+public static class Extensions
 {
     // lesson
     extension(Lesson lesson)
     {
-        /// <remaeks>
-        /// 部分信息不会写入（如学生人数、学期、班级名称）
-        /// </remaeks>
-        /// <param name="startDate">
-        ///     如果 <paramref name="startDate"/> 为 null，请确保 lesson 数据中的 Date 为有效值。
-        ///     如果 <paramref name="startDate"/> 不为 null，请确保它为星期一，否则日期推断会出问题。
-        /// </param>
-        public List<CalendarEvent> ToCalendarEvent(ICalConvertContext context)
+        /// <remaeks>部分信息不会写入（如学生人数、学期、班级名称）</remaeks>
+        public List<CalendarEvent> ToCalendarEvent(ICalConvertOptions context)
         {
             List<CalendarEvent> result = [];
             bool useDate = lesson.Date is { };
@@ -81,17 +76,17 @@ public static class ExtraExtensions
     // List<Lesson>
     extension(List<Lesson> lessonList)
     {
-        public Calendar ToCalendar(ICalConvertContext context)
+        public Calendar ToCalendar(ICalConvertOptions context)
         {
             Calendar result = new();
             lessonList.ForEach(l => l.ToCalendarEvent(context).ForEach(result.Events.Add));
             return result;
         }
 
-        public string? ToCalendarString(ICalConvertContext context) =>
+        public string? ToCalendarString(ICalConvertOptions context) =>
             new CalendarSerializer().SerializeToString(lessonList.ToCalendar(context));
 
-        public async Task WriteAsICS(string path, ICalConvertContext context) =>
+        public async Task WriteAsICS(string path, ICalConvertOptions context) =>
             await File.WriteAllTextAsync(path, lessonList.ToCalendarString(context));
 
         /// <summary>
@@ -101,20 +96,17 @@ public static class ExtraExtensions
         {
             using StreamReader reader = new(stream);
             List<Lesson> result = [];
-            SWITCH: switch (type)
+            switch (type)
             {
                 default:
                 case JXFWFileType.AutoDetect:
-                    type = stream.ReadByte() switch
-                    {
-                        '\"' => JXFWFileType.XLS,
-                        '<' => JXFWFileType.CSV,
-                        _ => throw new FileLoadException("Could not detect the file type."),
-                    };
+                    var r = stream.ReadByte();
                     stream.Seek(0, SeekOrigin.Begin);
-                    goto SWITCH;
-                case JXFWFileType.XLS:
-                case JXFWFileType.DOC:
+                    if (r is '"') goto case JXFWFileType.CSV;
+                    if (r is '<') goto case JXFWFileType.XLS;
+                    throw new FileLoadException("Could not detect the file type.");
+                case JXFWFileType.CSV:
+                case JXFWFileType.TEXT:
                     reader.ReadLine();  // Skip header
                     {
                         using StringReader temp = new(WebUtility.HtmlDecode(reader.ReadToEnd()));
@@ -126,8 +118,8 @@ public static class ExtraExtensions
                         }
                     }
                     break;
-                case JXFWFileType.CSV:
-                case JXFWFileType.TEXT:
+                case JXFWFileType.XLS:
+                case JXFWFileType.DOC:
                     HtmlDocument doc = new();
                     doc.Load(stream);
                     var trNodes = doc.DocumentNode.SelectNodes("//tr");
@@ -202,7 +194,7 @@ public static class ExtraExtensions
                 "简介",};
             static IList<object> GetContent(Lesson l) =>
                 [
-                    l.Term,
+                    l.Term.Name,
                     l.Name,
                     l.Teacher,
                     string.Join(',', l.ClassName),
@@ -229,7 +221,7 @@ public static class ExtraExtensions
     // ExamSchedule
     extension(ExamSchedule schedule)
     {
-        public CalendarEvent ToCalendarEvent(ICalConvertContext context)
+        public CalendarEvent ToCalendarEvent(ICalConvertOptions context)
         {
             DateTime dtStart = schedule.Date.ToDateTime(schedule.StartTime);
             DateTime dtEnd = schedule.Date.ToDateTime(schedule.EndTime);
@@ -261,17 +253,17 @@ public static class ExtraExtensions
     // List<ExamSchedule>
     extension(List<ExamSchedule> scheduleList)
     {
-        public Calendar ToCalendar(ICalConvertContext context)
+        public Calendar ToCalendar(ICalConvertOptions context)
         {
             Calendar result = new();
             scheduleList.ForEach(schedule => result.Events.Add(schedule.ToCalendarEvent(context)));
             return result;
         }
 
-        public string? ToCalendarString(ICalConvertContext context) =>
+        public string? ToCalendarString(ICalConvertOptions context) =>
             new CalendarSerializer().SerializeToString(scheduleList.ToCalendar(context));
 
-        public async Task WriteAsICS(string path, ICalConvertContext context) =>
+        public async Task WriteAsICS(string path, ICalConvertOptions context) =>
             await File.WriteAllTextAsync(path, scheduleList.ToCalendarString(context));
 
         /// <summary>
@@ -377,16 +369,12 @@ public static class ExtraExtensions
         /// <param name="year">
         /// 四位数字的年份，填秋季的那年，如某一学年的上学期为2025秋季，下学期为2026春季，則 year 应为 "2025"
         /// </param>
-        public async Task<(int term1Count, int term2Count, float GPA, float averageGrade)> GetGPAAndAverageGrade(string year)
+        public async Task<(int term1Count, int term2Count, float GPA, float averageGrade)> GetGPAAndAverageGrade(int year)
         {
-            if (year.Length != 4 || year.Any(x => !char.IsDigit(x)))
-            {
-                throw new ArgumentException("年份格式不正确", nameof(year));
-            }
-            var term1 = $"{year}01";
-            var scores1 = await dataService.GetCourseScore(term1);
-            var term2 = $"{year}02";
-            var scores2 = await dataService.GetCourseScore(term2);
+            Term term = new(year, TermPeriod.First);
+            var scores1 = await dataService.GetCourseScore(term);
+            term = term.Next();
+            var scores2 = await dataService.GetCourseScore(term);
             if (scores1 is null || scores2 is null)
             {
                 throw new NullReferenceException("课程成绩获取异常");
@@ -407,24 +395,5 @@ public static class ExtraExtensions
         DOC,
         CSV,
         TEXT,
-    }
-
-    public class ICalConvertContext
-    {
-        public SessionCollection Sessions = SessionCollection.Default;
-
-        /// <summary>
-        /// 是否在 <see cref="Sessions"/> 连续时自动合并时间
-        /// </summary>
-        public bool IsMergeIfContinuous = true;
-
-        public Alarm? Alarm = null;
-
-        /// <summary>
-        /// 首周星期一的日期
-        /// </summary>
-        public DateOnly? StartDate = null;
-
-        public List<string> Categories = [];
     }
 }

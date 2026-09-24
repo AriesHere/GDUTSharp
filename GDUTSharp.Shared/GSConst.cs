@@ -1,6 +1,6 @@
 ﻿namespace GDUTSharp.Shared;
 
-public static class GDUTConstant
+public static class GSConst
 {
     /// <summary>本项目（GDUTSharp）的仓库地址</summary>
     public const string GDUTSHARP_REPO = "https://github.com/AriesHere/GDUTSharp";
@@ -89,8 +89,8 @@ public static class GDUTConstant
     public const string NOTICE_CATEGORIES_GET = "https://oas.gdut.edu.cn/seeyon/ajax.do?method=ajaxAction&managerName=newsDataManager";
 
     /// <summary>通知详情</summary>
-    /// <remarks>将 {0} 替换为通知的 id</remarks>
-    public const string NOTICE_DETAIL = "https://oas.gdut.edu.cn/seeyon/newsData.do?method=newsView&newsId={0}";
+    /// <remarks>在末尾补充通知的 id</remarks>
+    public const string NOTICE_DETAIL = "https://oas.gdut.edu.cn/seeyon/newsData.do?method=newsView&newsId=";
 
     #endregion
 

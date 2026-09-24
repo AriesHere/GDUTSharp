@@ -63,6 +63,6 @@ public partial class TeachingPlan
     /// <summary>修读方式</summary>
     public string StudyMode { get; set; } = string.Empty;
 
-    /// <summary>学年学期代码，如“202601”</summary>
-    public string Term { get; set; } = string.Empty;
+    /// <summary>学年学期</summary>
+    public Term Term { get; set; } = new();
 }

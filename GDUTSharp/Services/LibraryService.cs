@@ -44,7 +44,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
             int end = r.IndexOf('"', start);
             string refValue = WebUtility.HtmlDecode(r[start..end]);
             var rq = new HttpRequestMessage(HttpMethod.Get, refValue);
-            rq.Headers.Referrer = new(GDUTConstant.LIBRARY_LOGIN);
+            rq.Headers.Referrer = new(GSConst.LIBRARY_LOGIN);
             response = await _client.SendAsync(rq);
 
             r = await response.Content.ReadAsStringAsync();
@@ -96,7 +96,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
                     "endDate": null
                 }
                 """;
-            using var request = new HttpRequestMessage(HttpMethod.Post, GDUTConstant.LIBRARY_LOAN_LIST)
+            using var request = new HttpRequestMessage(HttpMethod.Post, GSConst.LIBRARY_LOAN_LIST)
             {
                 Content = new StringContent(requestContent, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
             };
@@ -115,8 +115,8 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, GDUTConstant.LIBRARY_DAILY_RECOMMEND);
-            request.Headers.Referrer = new(GDUTConstant.LIBRARY_DAILY_RECOMMEND);
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.LIBRARY_DAILY_RECOMMEND);
+            request.Headers.Referrer = new(GSConst.LIBRARY_DAILY_RECOMMEND);
             request.Headers.Add("jwtOpacAuth", _jwtOpacAuth);
             using HttpResponseMessage response = await _client.SendAsync(request);
             var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.DailyRecommandDtoCollection);

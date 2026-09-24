@@ -2,21 +2,17 @@
 
 #pragma warning disable IDE1006 // Naming Styles
 
-public class DtoCollectionBase<T>
+public abstract class DtoCollectionBase<TResult, TDto>
 {
-    public List<T> rows { get; set; } = [];
+    public List<TDto> rows { get; set; } = [];
 
     public int Count => rows.Count;
 
-    public void Add(T item) => rows.Add(item);
+    public void Add(TDto item) => rows.Add(item);
 
-    public void Clear() => rows.Clear();
+    public IEnumerator<TDto> GetEnumerator() => rows.GetEnumerator();
 
-    public void CopyTo(T[] array, int arrayIndex) => rows.CopyTo(array, arrayIndex);
-
-    public IEnumerator<T> GetEnumerator() => rows.GetEnumerator();
-
-    public T this[int index] => rows[index];
+    public abstract List<TResult> Convert();
 }
 
 #pragma warning restore IDE1006 // Naming Styles

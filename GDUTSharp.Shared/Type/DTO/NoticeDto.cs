@@ -15,8 +15,8 @@ public class NoticeDtoCollection
 
     public List<NoticeDto> list { get; set; } = [];
 
-    public static implicit operator NoticeCollection(NoticeDtoCollection source) => 
-        new()
+    public static implicit operator NoticeCollection?(NoticeDtoCollection? source) => 
+        source is null ? null : new()
         {
             Notices = [..source.list],
             CurrentPage = source.pageNo,

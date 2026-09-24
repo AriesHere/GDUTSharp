@@ -10,6 +10,7 @@ namespace GDUTSharp.Shared.Json;
 [JsonSourceGenerationOptions()]
 [JsonSerializable(typeof(List<int>))]
 [JsonSerializable(typeof(List<string>))]
+[JsonSerializable(typeof(Term))]
 
 [JsonSerializable(typeof(Lesson))]
 [JsonSerializable(typeof(LessonDto))]

@@ -30,5 +30,5 @@ public partial class Lesson
 
     public string Profile { get; set; } = string.Empty;
 
-    public string Term { get; set; } = string.Empty;
+    public Term Term { get; set; } = new();
 }

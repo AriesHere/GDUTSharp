@@ -4,9 +4,9 @@ namespace GDUTSharp.Shared.Type.DTO;
 
 #pragma warning disable IDE1006 // Naming Styles
 
-public class CourseScoreDtoCollection : DtoCollectionBase<CourseScoreDto>
+public class CourseScoreDtoCollection : DtoCollectionBase<CourseScore, CourseScoreDto>
 {
-    public static implicit operator List<CourseScore>(CourseScoreDtoCollection? collection) => collection is null ? [] : [.. collection];
+    public override List<CourseScore> Convert() => [..this];
 }
 
 public class CourseScoreDto
@@ -54,7 +54,7 @@ public class CourseScoreDto
         return new()
         {
             Category = dto.kcflmc,
-            Term = dto.xnxqmc,
+            Term = new(dto.xnxqmc),
             Type = dto.kcdlmc,
             Gp = dto.cjjd,
             Name = dto.kcmc,

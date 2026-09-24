@@ -8,7 +8,7 @@ public partial class CourseScore
     public string Category { get; set; } = string.Empty;
 
     /// <summary>学年学期</summary>
-    public string Term { get; set; } = string.Empty;
+    public Term Term { get; set; } = new();
 
     /// <summary>课程大类</summary>
     /// <remarks>即"专业基础课"等</remarks>

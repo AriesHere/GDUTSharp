@@ -9,9 +9,9 @@ namespace GDUTSharp.Shared.Type.DTO;
 /// <remarks>
 /// 在 <see cref="Services.DataService.GetLessons"/> 方法中通过 { "sort", "zc,xq,jcdm" } 来保证按时间排序，以获得更好的性能
 /// </remarks>
-public class LessonDtoCollection : DtoCollectionBase<LessonDto>
+public class LessonDtoCollection : DtoCollectionBase<Lesson, LessonDto>
 {
-    public static implicit operator List<Lesson>(LessonDtoCollection? collection) => collection is null ? [] : [.. collection];
+    public override List<Lesson> Convert() => [..this];
 }
 
 public class LessonDto
@@ -90,7 +90,7 @@ public class LessonDto
             LessonSequence = dto.kxh,
             LessonType = dto.jxhjmc,
             Profile = WebUtility.HtmlDecode(dto.sknrjj),
-            Term = dto.xnxqdm,
+            Term = new(dto.xnxqdm),
         };
     }
 }

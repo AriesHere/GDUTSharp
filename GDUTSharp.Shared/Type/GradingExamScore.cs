@@ -4,7 +4,7 @@
 public partial class GradingExamScore
 {
     /// <summary>学年学期名称，如“2026秋季”</summary>
-    public string Term { get; set; } = string.Empty;
+    public Term Term { get; set; } = new();
 
     /// <summary>考级课程编号，如“CET6”</summary>
     public string GradingExamCode { get; set; } = string.Empty;

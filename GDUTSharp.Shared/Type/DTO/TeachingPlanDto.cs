@@ -4,9 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace GDUTSharp.Shared.Type.DTO;
 
-public class AvaliableTeachingPlanDtoCollection : DtoCollectionBase<AvaliableTeachingPlanDto>
+public class AvaliableTeachingPlanDtoCollection : DtoCollectionBase<AvaliableTeachingPlan, AvaliableTeachingPlanDto>
 {
-    public static implicit operator List<AvaliableTeachingPlan>(AvaliableTeachingPlanDtoCollection? collection) => collection is null ? [] : [.. collection];
+    public override List<AvaliableTeachingPlan> Convert() => [.. this];
 }
 
 public class AvaliableTeachingPlanDto
@@ -35,9 +35,9 @@ public class AvaliableTeachingPlanDto
     }
 }
 
-public class TeachingPlanDtoCollection : DtoCollectionBase<TeachingPlanDto>
+public class TeachingPlanDtoCollection : DtoCollectionBase<TeachingPlan, TeachingPlanDto>
 {
-    public static implicit operator List<TeachingPlan>(TeachingPlanDtoCollection? collection) => collection is null ? [] : [.. collection];
+    public override List<TeachingPlan> Convert() => [.. this];
 }
 
 public class TeachingPlanDto
@@ -105,7 +105,7 @@ public class TeachingPlanDto
             ClassHour = dto.zxs,
             GradeScale = dto.cjfsmc,
             StudyMode = dto.xdfsmc,
-            Term = dto.xnxqdm1,
+            Term = new(dto.xnxqdm1),
         };
     }
 }

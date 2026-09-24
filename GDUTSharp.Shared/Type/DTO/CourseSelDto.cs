@@ -4,9 +4,9 @@ namespace GDUTSharp.Shared.Type.DTO;
 
 #pragma warning disable IDE1006 // Naming Styles
 
-public class CourseSelDtoCollection : DtoCollectionBase<CourseSelDto>
+public class CourseSelDtoCollection : DtoCollectionBase<CourseSel, CourseSelDto>
 {
-    public static implicit operator List<CourseSel>(CourseSelDtoCollection? collection) => collection is null ? [] : [..collection];
+    public override List<CourseSel> Convert() => [..this];
 }
 
 public class CourseSelDto

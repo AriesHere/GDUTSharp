@@ -6,7 +6,7 @@ namespace GDUTSharp.Shared.Type;
 [OverrideToString("SemesterRegistration")]
 public partial class SemesterReg
 {
-    public string Term { get; set; } = string.Empty;
+    public Term Term { get; set; } = new();
 
     /// <summary>注册状态</summary>
     public string Status { get; set; } = string.Empty;

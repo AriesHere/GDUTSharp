@@ -24,9 +24,10 @@ public interface INoticeService
     public Task<NoticeCollection?> GetNoticeCollection(string id, int pageNumber, int pageSize = 20);
 
     /// <summary>拼接通知详情的 url</summary>
-    public static string GetNoticeDetailUrl(string id) => string.Format(GDUTConstant.NOTICE_DETAIL, id);
+    public static string GetNoticeDetailUrl(string id) => GSConst.NOTICE_DETAIL + id;
 
     /// <summary>拼接通知图片的 url</summary>
     /// <remarks><paramref name="imageUrl"/> 是 <see cref="Notice.ImageUrl"/></remarks>
-    public static string GetNoticeImageUrl(string imageUrl) => GDUTConstant.NOTICE_BASE + imageUrl;
+    /// <param name="imageUrl">使用 <see cref="Notice.ImageUrl"/></param>
+    public static string GetNoticeImageUrl(string imageUrl) => GSConst.NOTICE_BASE + imageUrl;
 }

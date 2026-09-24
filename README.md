@@ -18,6 +18,7 @@ GDUTSharp (保证支持 AOT):
     - 考级成绩
     - 教学计划（又称学习计划）
     - 学期注册信息
+    - 课程任务
 - 图书馆
     - 每日推荐
     - 借阅信息
@@ -27,25 +28,13 @@ GDUTSharp (保证支持 AOT):
     - 绩点计算
 
 GDUTSharp.Extra:
-- 为部分功能提供更稳健的实现
+- 为部分 Service 提供更稳健的实现
 - 读取直接从教学服务中心导出的数据
 - 将课表信息和考试安排信息输出为 [iCalendar](https://icalendar.org/) 文件
-- 将课程数据，考试安排数据和选课数据导出为 xlsx 文件
+- 将课程数据，考试安排数据、课程任务数据和选课数据导出为 xlsx 文件
 
 ## 使用示例  
 ```C#
-using GDUTSharp.Extra;
-using GDUTSharp.Interfaces;
-using GDUTSharp.Services;
-using GDUTSharp.Shared.Type;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-// 这两个依赖仅在导出课程功能需要
-using Ical.Net;
-using Ical.Net.DataTypes;
-
-// 注册到 DI 容器中
 IHost AppHost = Host.CreateDefaultBuilder()
     .ConfigureServices((context, services) =>
     {
@@ -61,27 +50,26 @@ IHost AppHost = Host.CreateDefaultBuilder()
     .Build();
 AppHost.RunAsync();
 
-var logger = AppHost.Services.GetRequiredService<ILogger<Program>>();
-var jxfw = AppHost.Services.GetRequiredService<IJXFWService>();
-
 // 这里填充学号和密码
 LoginInfo testLoginInfo = new() { UserName = "", Password = "" };
+var logger = AppHost.Services.GetRequiredService<ILogger<Program>>();
+var jxfw = AppHost.Services.GetRequiredService<IJXFWService>();
 var r = await jxfw.Login(testLoginInfo);
-logger.LogCritical("登录结果:{Result}", r); // 自行处理登录错误时的情况
-var term = await jxfw.GetTerm();   // 获取学期
+logger.LogCritical("登录结果:{Result}", r); // 自行处理登录失败时的情况
+var term = jxfw.GetTerm().Result;   // 获取学期
 if (term is not null && await jxfw.GetLessons(term) is List<Lesson> lessons)
 {
-    // 以下是 GDUTSharp.Extra 的功能之一
+    // 以下是 GDUTSharp.Extra 的功能之一：
     // 导出课程为 iCalendar 文件以便于导入其它日历程序中
     await File.WriteAllTextAsync("path/to/file",
-        lessons.ToCalendarString(new ExtraExtensions.ICalConvertContext()
-        {
-            Alarm = new()
+        lessons.ToCalendarString(new GDUTSharp.Extra.Types.ICalConvertOptions()
             {
-                Trigger = new(new Duration(minutes: -30)),
-                Action = AlarmAction.Display
-            },
-            IsMergeIfContinuous = true,
-        }));
+                Alarm = new()
+                {
+                    Trigger = new(new Duration(minutes: -30)),
+                    Action = AlarmAction.Display,
+                },
+                IsMergeIfContinuous = true,
+            }));
 }
 ```
