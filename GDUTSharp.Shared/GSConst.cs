@@ -100,7 +100,12 @@ public static class GSConst
 
     public const string SPORTS_TEST_CAPTCHA = "http://tzcs.gdut.edu.cn/Src/PlatForm/GetCheckCode.aspx";
 
+    /// <summary>个人主页</summary>
     public const string SPORTS_TEST_PERSONAL = "http://tzcs.gdut.edu.cn/Src/PlatForm/Personal/Index.aspx";
+
+    /// <summary>历史成绩</summary>
+    /// <remarks>在末尾补上年份，如“2026”</remarks>
+    public const string SPORTS_TEST_SCORE = "http://tzcs.gdut.edu.cn/Src/PlatForm/Personal/PHTest_StudentScore_H.aspx?DataYear=";
 
     #endregion
 

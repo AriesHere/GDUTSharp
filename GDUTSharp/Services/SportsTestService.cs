@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Type;
@@ -105,6 +106,133 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         {
             request?.Dispose();
             response?.Dispose();
+        }
+    }
+
+    public async virtual Task<SportsTestScore?> GetScore(string year)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SPORTS_TEST_SCORE + year);
+            using var response = await _client.SendAsync(request);
+            var html = await response.Content.ReadAsStringAsync();
+            var cur = html.IndexOf("未查询到该学生ID");
+            if (cur != -1) return null;   // 检查是否有成绩
+            cur = 0;
+            SportsTestScore result = new()
+            {
+                StudentName = html.Extract("<span id=\"lblStudentName\">", '<', out cur, cur),
+                StudentId = html.Extract("<span id=\"lblStudentNO\">", '<', out cur, cur),
+                Year = html.Extract("<br/>", '年', out cur, cur)    // 虽然输入了一个 year，但是以防万一，以返回结果为准
+            };
+            // 身高体重
+            var tempIndex = html.IndexOf("lblHeight", cur);
+            if (tempIndex != -1 && float.TryParse(html.Extract(">", '<', out cur, tempIndex), out var heightR))
+                result.Height_R = heightR;
+            (result.Figure_RS, result.Figure_WS) = SetScore(html, "lblBMI", ref cur);
+            tempIndex = html.IndexOf("lblWeight", cur);
+            if (tempIndex != -1 && float.TryParse(html.Extract(">", '<', out cur, tempIndex), out var weightR))
+                result.Weight_R = weightR;
+            // 肺活量
+            tempIndex = html.IndexOf("lblVitalCapacity", cur);
+            if (tempIndex != -1 && int.TryParse(html.Extract(">", '<', out cur, tempIndex), out var lungR))
+                result.VitalCapacity_R = lungR;
+            (result.VitalCapacity_RS, result.VitalCapacity_WS) = SetScore(html, "lblVitalCapacity", ref cur);
+            // 50米跑
+            tempIndex = html.IndexOf("lblFiftyMeterRace", cur);
+            if (tempIndex != -1)
+            {
+                var r = html.Extract(">", '<', out cur, tempIndex);
+                if (r.Length > 0)
+                {
+                    var t = r.Split('.');
+                    result.Meter50_R = t.Length == 2 ? new(0, 0, int.Parse(t[0]), int.Parse(t[1])) : new(0, 0, int.Parse(t[0]));
+                }
+            }
+            (result.Meter50_RS, result.Meter50_WS) = SetScore(html, "lblFiftyMeterRace", ref cur);
+            // 坐位体前屈
+            tempIndex = html.IndexOf("lblSitAndReach", cur);
+            if (tempIndex != -1 && float.TryParse(html.Extract(">", '<', out cur, tempIndex), out var sitR))
+                result.SitAndReach_R = sitR;
+            (result.SitAndReach_RS, result.SitAndReach_WS) = SetScore(html, "lblSitAndReach", ref cur);
+            // 立定跳远
+            tempIndex = html.IndexOf("lblLongJump", cur);
+            if (tempIndex != -1 && int.TryParse(html.Extract(">", '<', out cur, tempIndex), out var jumpR))
+                result.StandingLongJump_R = jumpR;
+            (result.StandingLongJump_RS, result.StandingLongJump_WS) = SetScore(html, "lblLongJump", ref cur);
+            // 跳绳
+            tempIndex = html.IndexOf("lblRopeSkipping", cur);
+            if (tempIndex != -1 && int.TryParse(html.Extract(">", '<', out cur, tempIndex), out var ropeR))
+                result.RopeSkipping_R = ropeR;
+            (result.RopeSkipping_RS, result.RopeSkipping_WS) = SetScore(html, "lblRopeSkipping", ref cur);
+            // 引体向上
+            tempIndex = html.IndexOf("lblChinning", cur);
+            if (tempIndex != -1 && int.TryParse(html.Extract(">", '<', out cur, tempIndex), out var pullR))
+                result.PullUp_R = pullR;
+            (result.PullUp_RS, result.PullUp_WS) = SetScore(html, "lblRopeSkipping", ref cur);
+            // 仰卧起坐
+            tempIndex = html.IndexOf("lblSitUps", cur);
+            if (tempIndex != -1 && int.TryParse(html.Extract(">", '<', out cur, tempIndex), out var upR))
+                result.SitUp_R = upR;
+            (result.SitUp_RS, result.SitUp_WS) = SetScore(html, "lblRopeSkipping", ref cur);
+            // 千米跑
+            tempIndex = html.IndexOf("lblKiloMeterRace", cur);
+            if (tempIndex != -1)
+            {
+                var r = html.Extract(">", '<', out cur, tempIndex);
+                if (r.Length > 0)
+                {
+                    var t = r.Split('.');
+                    result.Meter1k_R = t.Length == 2 ? new(0, int.Parse(t[0]), int.Parse(t[1])) : new(0, int.Parse(t[0]));
+                }
+            }
+            (result.Meter1k_RS, result.Meter1k_WS) = SetScore(html, "lblRopeSkipping", ref cur);
+            // 800 米跑
+            tempIndex = html.IndexOf("lblEightHundredMeterRace", cur);
+            if (tempIndex != -1)
+            {
+                var r = html.Extract(">", '<', out cur, tempIndex);
+                if (r.Length > 0)
+                {
+                    var t = r.Split('.');
+                    result.Meter800_R = t.Length == 2 ? new(0, int.Parse(t[0]), int.Parse(t[1])) : new(0, int.Parse(t[0]));
+                }
+            }
+            (result.Meter800_RS, result.Meter800_WS) = SetScore(html, "lblEightHundredMeterRace", ref cur);
+            // 50米×8往返跑
+            tempIndex = html.IndexOf("lblShuttleRun", cur);
+            if (tempIndex != -1)
+            {
+                var r = html.Extract(">", '<', out cur, tempIndex);
+                if (r.Length > 0)
+                {
+                    var t = r.Split('.');
+                    result.RoundTrip_R = t.Length == 2 ? new(0, int.Parse(t[0]), int.Parse(t[1])) : new(0, int.Parse(t[0]));
+                }
+            }
+            (result.RoundTrip_RS, result.RoundTrip_WS) = SetScore(html, "lblShuttleRun", ref cur);
+            // 加权总分
+            tempIndex = html.IndexOf("lblTotalScore", cur);
+            if (tempIndex != -1 && float.TryParse(html.Extract(">", '<', out cur, tempIndex), out var ws))
+                result.Score = ws;
+            return result;
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取体测成绩失败。{e}", e);
+            return null;
+        }
+
+        static (int Raw, float Weighted) SetScore(string html, string find, ref int cur)
+        {
+            var tempIndex = html.IndexOf(find + "_Score", cur);
+            (int Raw, float Weighted) result = new();
+            if (tempIndex != -1 && int.TryParse(html.Extract(">", '<', out cur, tempIndex), out var rs))
+                result.Raw = rs;
+            tempIndex = html.IndexOf(find + "_SingleScore", cur);
+            if (tempIndex != -1 && float.TryParse(html.Extract(">", '<', out cur, tempIndex), out var ws))
+                result.Weighted = ws;
+            return result;
         }
     }
 }

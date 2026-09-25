@@ -13,7 +13,7 @@ public static partial class Helper
         {
             var index = s.IndexOf(start, startIndex) + start.Length;
             var endIndex = s.IndexOf(end, index);
-            currentIndex = endIndex;
+            currentIndex = endIndex + end.Length;
             return s[index..endIndex];
         }
 
@@ -21,7 +21,7 @@ public static partial class Helper
         {
             var index = s.IndexOf(start, startIndex) + start.Length;
             var endIndex = s.IndexOf(end, index);
-            currentIndex = endIndex;
+            currentIndex = endIndex + 1;
             return s[index..endIndex];
         }
     }

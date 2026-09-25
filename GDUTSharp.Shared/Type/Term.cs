@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using GDUTSharp.Shared.Attributes;
 
 namespace GDUTSharp.Shared.Type;
 

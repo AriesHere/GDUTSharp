@@ -14,4 +14,8 @@ public interface ISportsTestService
     /// 的 Chaptcha 属性中，再调用本方法。
     /// </remarks>
     public Task<bool> Login(LoginInfo loginInfo);
+
+    /// <summary>获取特定年份的体测成绩</summary>
+    /// <param name="year">四位数年份，如“2026”</param>
+    public Task<SportsTestScore?> GetScore(string year);
 }
