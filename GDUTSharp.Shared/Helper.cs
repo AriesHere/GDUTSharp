@@ -5,7 +5,26 @@ namespace GDUTSharp.Shared;
 
 public static partial class Helper
 {
-    public static byte[] ToBytes(this string s) => Encoding.UTF8.GetBytes(s);
+    extension(string s)
+    {
+        public byte[] ToBytes() => Encoding.UTF8.GetBytes(s);
+
+        public string Extract(string start, string end, out int currentIndex, int startIndex = 0)
+        {
+            var index = s.IndexOf(start, startIndex) + start.Length;
+            var endIndex = s.IndexOf(end, index);
+            currentIndex = endIndex;
+            return s[index..endIndex];
+        }
+
+        public string Extract(string start, char end, out int currentIndex, int startIndex = 0)
+        {
+            var index = s.IndexOf(start, startIndex) + start.Length;
+            var endIndex = s.IndexOf(end, index);
+            currentIndex = endIndex;
+            return s[index..endIndex];
+        }
+    }
 
     public static string GetString(this byte[] b) => Encoding.UTF8.GetString(b);
 

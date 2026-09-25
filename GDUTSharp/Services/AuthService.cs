@@ -16,7 +16,6 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     protected readonly ILogger<AuthService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly ISecurityService _security = security;
-    protected const int IV_LEN = 16;
     protected const int PREFIX_LEN = 64;
     protected const string AES_CHARS = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
     protected const string GET_SALT = "id=\"pwdEncryptSalt\" value=\"";
@@ -26,8 +25,8 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
 
     protected static byte[] GenIV()
     {
-        var bytes = new byte[IV_LEN];
-        for (int i = 0; i < IV_LEN; i++)
+        var bytes = new byte[ISecurityService.IV_LEN];
+        for (int i = 0; i < ISecurityService.IV_LEN; i++)
         {
             int index = RandomNumberGenerator.GetInt32(AES_CHARS.Length);
             bytes[i] = (byte)AES_CHARS[index];
@@ -83,10 +82,8 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
 
                     // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这样，
                     // 请使用 GDUTSharp.Extra.SteadyAuthService 中的 LoginAndAuth 方法
-                    var saltIndex = html.IndexOf(GET_SALT) + GET_SALT.Length;
-                    var pwdEncryptSalt = html[saltIndex..html.IndexOf('"', saltIndex)];
-                    var execIndex = html.IndexOf(GET_EXEC, saltIndex) + GET_EXEC.Length;
-                    var execution = html[execIndex..html.IndexOf('"', execIndex)];
+                    var pwdEncryptSalt = html.Extract(GET_SALT, '"', out var cur);
+                    var execution = html.Extract(GET_EXEC, '"', out _, cur);
                     formData["username"] = loginInfo.UserName;
                     formData["password"] = Convert.ToBase64String(
                         _security.AesCbcEncrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));

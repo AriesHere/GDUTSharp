@@ -94,6 +94,16 @@ public static class GSConst
 
     #endregion
 
+    #region 体质测试平台
+
+    public const string SPORTS_TEST_BASE = "http://tzcs.gdut.edu.cn/";
+
+    public const string SPORTS_TEST_CAPTCHA = "http://tzcs.gdut.edu.cn/Src/PlatForm/GetCheckCode.aspx";
+
+    public const string SPORTS_TEST_PERSONAL = "http://tzcs.gdut.edu.cn/Src/PlatForm/Personal/Index.aspx";
+
+    #endregion
+
     // =============== 以下均暂时未使用 ===============
 
     // 研究生登录链接

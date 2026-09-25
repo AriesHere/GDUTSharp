@@ -1,7 +1,6 @@
 ﻿using System.Security.Cryptography;
 using GDUTSharp.Services;
 using GDUTSharp.Shared;
-using GDUTSharp.Shared.Type;
 using GDUTSharp.Test.TestServers;
 
 namespace GDUTSharp.Test

@@ -90,7 +90,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         }
     }
     
-    public async Task<NoticeCollection?> GetNoticeCollection(string id, int pageNumber, int pageSize)
+    public async virtual Task<NoticeCollection?> GetNoticeCollection(string id, int pageNumber, int pageSize)
     {
         try
         {

@@ -5,22 +5,12 @@ namespace GDUTSharp.Shared.Type
 {
     public class LoginInfo
     {
-        /// <summary>学号</summary>
         public required string UserName { get; set; }
 
         public required string Password { get; set; }
 
-        public Role Role => UserName.Length > 0 ? (Role)(UserName[0] - '0') : Role.UNKNOWN;
+        public string Captcha { get; set; } = string.Empty;
     }
-
-    public enum Role
-    {
-        UNDER_GRADUATE = 3,
-        GRADUATE = 2,
-        TRACHER = 0,
-        UNKNOWN = -1,
-    }
-
 
     /// <summary>统一认证中心验证码</summary>
     /// <remarks><see cref="SmallImage"/> 和 <see cref="BigImage"/> 都是经过 Base64 编码的 png 文件</remarks>

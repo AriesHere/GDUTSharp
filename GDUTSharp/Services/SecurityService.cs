@@ -8,7 +8,7 @@ namespace GDUTSharp.Services
     {
         private readonly ILogger<SecurityService> _logger = logger;
 
-        public virtual byte[] GenIV() => RandomNumberGenerator.GetBytes(16);
+        public virtual byte[] GenIV() => RandomNumberGenerator.GetBytes(ISecurityService.IV_LEN);
 
         public virtual byte[] AesCbcEncrypt(byte[] plaintext, byte[] key, byte[] iv)
         {

@@ -2,6 +2,8 @@
 
 public interface ISecurityService
 {
+    public const int IV_LEN = 16;
+
     public byte[] GenIV();
 
     public byte[] AesCbcEncrypt(byte[] plaintext, byte[] key, byte[] iv);
