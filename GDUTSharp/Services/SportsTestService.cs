@@ -1,4 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
+﻿using System.Net;
 using System.Security.Cryptography;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
@@ -28,23 +28,60 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         }
     }
 
+    public async virtual Task<List<string>?> GetYears()
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SPORTS_TEST_PERSONAL);
+            using var response = await _client.SendAsync(request);
+            if (response.StatusCode is HttpStatusCode.Found)
+            {
+                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("未登录或登录状态失效");
+                return null;
+            }
+            else
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                List<string> result = [];
+                var temp = content.Extract("<a lay-href=\"PHTest_StudentScore.aspx\">", '年', out var cur);
+                if (temp.Length == 4) result.Add(temp);
+                while(content.IndexOf("HistoryYears", cur) is var index && index != -1)
+                {
+                    temp = content.Extract("HistoryYears", '"', out cur, index);
+                    if (temp.Length == 4) result.Add(temp);
+                }
+                return result;
+            }
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取有体测成绩的年份失败。{e}", e);
+            return null;
+        }
+    }
+
     public async virtual Task<bool> Login(LoginInfo loginInfo)
     {
         HttpRequestMessage? request = null;
         HttpResponseMessage? response = null;
         try
         {
-            request = new(HttpMethod.Get, GSConst.SPORTS_TEST_BASE);
+            request = new(HttpMethod.Get, GSConst.SPORTS_TEST_PERSONAL);
+            response = await _client.SendAsync(request);
+            request.Dispose();
+            var status = response.StatusCode;
+            var location = response.Headers.Location;
+            response.Dispose();
+            if (status is HttpStatusCode.OK)
+            {
+                return true;
+            }
+            // 如果需要登录， status 应为 302 Found, location 应该不是 null
+
+            request = new(HttpMethod.Get, location);
             response = await _client.SendAsync(request);
             request.Dispose();
             var content = await response.Content.ReadAsStringAsync();
-            response.Dispose();
-
-            var newUrl = GSConst.SPORTS_TEST_BASE + content.Extract("window.location.href='", '\'', out _);
-            request = new(HttpMethod.Get, newUrl);
-            response = await _client.SendAsync(request);
-            request.Dispose();
-            content = await response.Content.ReadAsStringAsync();
             response.Dispose();
 
             var viewState = content.Extract("id=\"__VIEWSTATE\" value=\"", '"', out var cur);
@@ -91,7 +128,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
                 { "hidModelWeixin", hidModelWeixin },
                 { "hidReferUrl", hidReferUrl },
             };
-            request = ICommonClient.CreateRequest(HttpMethod.Post, newUrl, requestContent);
+            request = ICommonClient.CreateRequest(HttpMethod.Post, location!.AbsoluteUri, requestContent);
             response = await _client.SendAsync(request);
             request.Dispose();
             var r = await response.Content.ReadAsStringAsync();

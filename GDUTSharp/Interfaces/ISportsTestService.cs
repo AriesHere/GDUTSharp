@@ -15,6 +15,13 @@ public interface ISportsTestService
     /// </remarks>
     public Task<bool> Login(LoginInfo loginInfo);
 
+    /// <summary>获取可用的年份（即应当有体测成绩的年份）</summary>
+    /// <remarks>
+    /// 成绩录入需要时间，因此最新一年可能需要过一段时间才能通过 <see cref="GetScore(string)"/>
+    /// 获得有效数据，但它仍会被包含在返回结果中
+    /// </remarks>
+    public Task<List<string>?> GetYears();
+
     /// <summary>获取特定年份的体测成绩</summary>
     /// <param name="year">四位数年份，如“2026”</param>
     public Task<SportsTestScore?> GetScore(string year);
