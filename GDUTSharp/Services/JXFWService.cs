@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Serialization.Metadata;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
@@ -7,6 +9,7 @@ using GDUTSharp.Shared.Type;
 using GDUTSharp.Shared.Type.DTO;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using static GDUTSharp.Interfaces.IJXFWService;
 
 namespace GDUTSharp.Services;
 
@@ -23,12 +26,14 @@ public class JXFWService(
     IOptions<JXFWServiceOptions> options,
     ILogger<JXFWService> logger,
     ICommonClient client,
-    IAuthService authService
+    IAuthService authService,
+    ISecurityService security
     ) : IJXFWService
 {
     protected readonly ILogger<JXFWService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
+    protected readonly ISecurityService _security = security;
     protected readonly int _maxPage = options.Value.MaxPage;
     protected readonly int _itemPerRequest = options.Value.ItemPerRequest;
 
@@ -63,16 +68,79 @@ public class JXFWService(
         return r;
     }
 
-    public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
+    public async virtual Task<byte[]?> GetCaptcha()
     {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.UNDER_CAPTCHA + DateTimeOffset.Now.ToUnixTimeMilliseconds());
+            using var response = await _client.SendAsync(request);
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+        catch (Exception e)
+        {
+            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取验证码异常。 {Exception}", e);
+            return null;
+        }
+    }
+
+    /// <remarks>
+    /// TODO: 尚未验证 <paramref name="loginType"/> 为 <see cref="LoginType.JXFW"/> 时能否正常登录
+    /// </remarks>
+    public async virtual Task<bool> Login(LoginInfo? loginInfo = null, LoginType loginType = LoginType.AuthServer)
+    {
+        HttpRequestMessage? request = null;
         HttpResponseMessage? response = null;
         try
         {
-            response = await _authService.LoginAndAuth(IAuthService.SupportedServices.JXFW, loginInfo);
-            if (response is null) return false;
-            using var reader = new StreamReader(response.Content.ReadAsStream());
-            reader.ReadLine();  // skip
-            return reader.ReadLine()?.StartsWith("<!-- 移动端 -->") == false;
+            switch (loginType)
+            {
+                case LoginType.AuthServer:
+                    {
+                        response = await _authService.LoginAndAuth(IAuthService.SupportedServices.JXFW, loginInfo);
+                        if (response is null) return false;
+                        using var reader = new StreamReader(response.Content.ReadAsStream());
+                        reader.ReadLine();  // skip
+                        return reader.ReadLine()?.StartsWith("<!-- 移动端 -->") == false;
+                    }
+                case LoginType.JXFW:
+                    {
+                        request = new(HttpMethod.Get, GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN);
+                        response = await _client.SendAsync(request);
+                        request.Dispose();
+                        if (response.StatusCode == HttpStatusCode.OK)   // 需要登录
+                        {
+                            response.Dispose();
+                            if (loginInfo is null)
+                            {
+                                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("登录失败，尝试登录时未给出登录信息");
+                                return false;
+                            }
+                            if (loginInfo.Captcha.Length != 4)
+                            {
+                                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("验证码长度错误");
+                                return false;
+                            }
+                            StringBuilder sb = new();
+                            sb.Append(loginInfo.Captcha)
+                              .Append(loginInfo.Captcha)
+                              .Append(loginInfo.Captcha)
+                              .Append(loginInfo.Captcha);
+                            var content = new Dictionary<string, string>
+                            {
+                                { "account", loginInfo.UserName },
+                                { "pwd", Convert.ToHexString(_security.AesCbcEncrypt(loginInfo.Password.ToBytes(), sb.ToString().ToBytes(), _security.GenIV())) },
+                                { "verifycode", loginInfo.Captcha },
+                            };
+                            request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_LOGIN, content, GSConst.UNDER_LOGIN);
+                            response = await _client.SendAsync(request);
+                            request.Dispose();
+                            return !(await response.Content.ReadAsStringAsync()).StartsWith("{\"code\":-");
+                        }
+                        else return true;
+                    }
+                default:
+                    throw new InvalidDataException();
+            }
         }
         catch (Exception e)
         {
@@ -81,6 +149,7 @@ public class JXFWService(
         }
         finally
         {
+            request?.Dispose();
             response?.Dispose();
         }
     }

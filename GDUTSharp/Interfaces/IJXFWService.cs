@@ -7,7 +7,10 @@ namespace GDUTSharp.Interfaces;
 /// </summary>
 public interface IJXFWService
 {
-    public Task<bool> Login(LoginInfo? loginInfo = null);
+    /// <returns>JFIF 格式</returns>
+    public Task<byte[]?> GetCaptcha();
+
+    public Task<bool> Login(LoginInfo? loginInfo = null, LoginType loginType = LoginType.AuthServer);
 
     /// <summary>学期信息</summary>
     public Task<Term?> GetTerm();
@@ -44,4 +47,11 @@ public interface IJXFWService
 
     /// <summary>获取学期注册信息</summary>
     public Task<List<SemesterReg>?> GetSemesterRegistration();
+
+    /// <summary>登录方式</summary>
+    public enum LoginType
+    {
+        AuthServer, // 通过统一认证中心
+        JXFW,       // 通过教学服务自有的登录方式
+    }
 }

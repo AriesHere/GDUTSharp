@@ -5,7 +5,7 @@ namespace GDUTSharp.Interfaces;
 /// <summary>体质测试系统</summary>
 public interface ISportsTestService
 {
-    /// <returns>GIF89a 文件</returns>
+    /// <returns>GIF89a 格式</returns>
     public Task<byte[]?> GetCaptcha();
 
     /// <remarks>

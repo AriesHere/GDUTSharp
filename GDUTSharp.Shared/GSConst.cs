@@ -24,6 +24,13 @@ public static class GSConst
 
     #region 教学服务系统（本科生）
 
+    /// <summary>本科生教务系统自有登录</summary>
+    public const string UNDER_LOGIN = "https://jxfw.gdut.edu.cn/new/login";
+
+    /// <summary>本科生获取验证码（用于自有登录）</summary>
+    /// <remarks>在末尾补充 Unix 毫秒时间戳</remarks>
+    public const string UNDER_CAPTCHA = "https://jxfw.gdut.edu.cn/yzm?d=";
+
     /// <summary>本科生获取学期代码</summary>
     public const string UNDER_TERM = "https://jxfw.gdut.edu.cn/xsksap!ksapList.action";
 
