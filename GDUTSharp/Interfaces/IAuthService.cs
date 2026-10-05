@@ -2,8 +2,6 @@
 
 namespace GDUTSharp.Interfaces;
 
-// TODO: 获取验证码
-
 /// <summary>
 /// 统一认证中心认证服务接口
 /// </summary>

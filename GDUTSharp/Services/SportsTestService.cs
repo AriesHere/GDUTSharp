@@ -77,7 +77,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
                 return true;
             }
             // 如果需要登录， status 应为 302 Found, location 应该不是 null
-
+            // TODO: 由于使用了自动重定向，可能会导致 location 为 null
             request = new(HttpMethod.Get, location);
             response = await _client.SendAsync(request);
             request.Dispose();

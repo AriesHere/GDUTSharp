@@ -15,6 +15,5 @@
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false, AllowMultiple = false)]
 public sealed class OverrideToStringAttribute(string? displayName = null) : Attribute
 {
-    // TODO: 根据 DisplayName 修改显示的类名
     public string? DisplayName { get; set; } = displayName;
 }

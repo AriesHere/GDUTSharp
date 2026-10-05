@@ -2,7 +2,6 @@
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
@@ -46,7 +45,6 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     }
 
     /// <summary>附加前缀</summary>
-    /// <remarks>TODO: 不知为何，使用随机前缀时会出问题</remarks>
     protected virtual byte[] PrefixProcess(string raw) => [..GenPrefix(), ..raw.ToBytes()];
 
     #endregion
@@ -103,20 +101,6 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                 }
             }
             else if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在认证");
-
-            for (int i = 0; i < 5; i++)
-            {
-                if (response.StatusCode != HttpStatusCode.Redirect && response.StatusCode != HttpStatusCode.MovedPermanently)
-                    break;
-                string? location = response.Headers.Location?.AbsoluteUri;
-                if (string.IsNullOrEmpty(location))
-                    break;
-                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i + 1, location);
-                response.Dispose();
-                request = new HttpRequestMessage(HttpMethod.Get, location);
-                response = await _client.SendAsync(request);
-                request.Dispose();
-            }
 
             return response;
         }

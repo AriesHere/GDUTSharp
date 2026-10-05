@@ -23,6 +23,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
 
     public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
     {
+        HttpRequestMessage? request = null;
         HttpResponseMessage? response = null;
         try
         {
@@ -39,35 +40,26 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
 
             var r = await response.Content.ReadAsStringAsync();
             response.Dispose();
-            int valueIndex = r.IndexOf("value=\"");
-            int start = valueIndex + "value=\"".Length;
-            int end = r.IndexOf('"', start);
-            string refValue = WebUtility.HtmlDecode(r[start..end]);
-            var rq = new HttpRequestMessage(HttpMethod.Get, refValue);
-            rq.Headers.Referrer = new(GSConst.LIBRARY_LOGIN);
-            response = await _client.SendAsync(rq);
+            string refValue = WebUtility.HtmlDecode(r.Extract("value=\"", '"', out _));
+            request = new(HttpMethod.Get, refValue);
+            request.Headers.Referrer = new(GSConst.LIBRARY_LOGIN);
+            response = await _client.SendAsync(request);
+            request.Dispose();
 
             r = await response.Content.ReadAsStringAsync();
             response.Dispose();
             int valueIndex1 = r.IndexOf("name=\"refer\" value=\"");
-            start = valueIndex1 + "name=\"refer\" value=\"".Length;
-            end = r.IndexOf('"', start);
-            string refValue1 = WebUtility.HtmlDecode(r[start..end]);
-            var rq1 = new HttpRequestMessage(HttpMethod.Get, refValue1);
-            response = await _client.SendAsync(rq1);
+            string refValue1 = WebUtility.HtmlDecode(r.Extract("name=\"refer\" value=\"", '"', out _));
+            request = new(HttpMethod.Get, refValue1);
+            response = await _client.SendAsync(request);
+            request.Dispose();
 
-            r = await response.Content.ReadAsStringAsync();
+            r = response.RequestMessage?.RequestUri?.AbsoluteUri;
             response.Dispose();
-            var l = response.Headers.Location?.AbsoluteUri;
-            start = l?.IndexOf("jwt=") + "jwt=".Length ?? -1;
-            end = l?.IndexOf("&jwtHeader") ?? -1;
-            _jwtOpacAuth = l?[start..end] ?? string.Empty;
+            Exception.ThrowIfNull(r, "获取 jwtOpacAuth 失败。");
 
-            Cookie c = new("jwt", _jwtOpacAuth, null, "gdut.edu.cn");
-            Cookie c1 = new("jwtHeader", "jwtOpacAuth", null, "gdut.edu.cn");
-            _client.CookieContainer.Add(c);
-            _client.CookieContainer.Add(c1);
-
+            _client.CookieContainer.Add(new Cookie("jwt", r!.Extract("jwt=", "&jwtHeader", out _), null, "gdut.edu.cn"));
+            _client.CookieContainer.Add(new Cookie("jwtHeader", "jwtOpacAuth", null, "gdut.edu.cn"));
             return true;
         }
         catch (Exception e)
@@ -77,6 +69,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
         }
         finally
         {
+            request?.Dispose();
             response?.Dispose();
         }
     }

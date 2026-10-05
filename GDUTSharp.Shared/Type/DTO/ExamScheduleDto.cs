@@ -11,8 +11,7 @@ public class ExamScheduleDtoCollection : DtoCollectionBase<ExamSchedule, ExamSch
 }
 
 /// <remarks>
-/// <para>务必注意: <see cref="Time"/> 才是真正的考试时间 <see cref="Sessions"/> 只是占用节次</para>
-/// <para>TODO: 部分属性仍可继续拆分</para>
+/// 务必注意: <see cref="Time"/> 才是真正的考试时间 <see cref="Sessions"/> 只是占用节次
 /// </remarks>
 public class ExamScheduleDto
 {
