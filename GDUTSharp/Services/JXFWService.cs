@@ -27,8 +27,8 @@ public class JXFWService(
     ILogger<JXFWService> logger,
     ICommonClient client,
     IAuthService authService,
-    ISecurityService security
-    ) : IJXFWService
+    ISecurityService security)
+    : IJXFWService
 {
     protected readonly ILogger<JXFWService> _logger = logger;
     protected readonly ICommonClient _client = client;
@@ -37,11 +37,13 @@ public class JXFWService(
     protected readonly int _maxPage = options.Value.MaxPage;
     protected readonly int _itemPerRequest = options.Value.ItemPerRequest;
 
-    protected async virtual Task<List<TResult>?> GetData<TResult, TDto, TDtoCollection>(
+    protected virtual async Task<List<TResult>?> GetData<TResult, TDto, TDtoCollection>(
+        CookieContainer cookies,
         string url,
         Dictionary<string, string> requestContent,
-        JsonTypeInfo<TDtoCollection> jsonTypeInfo
-        ) where TDtoCollection : DtoCollectionBase<TResult, TDto>
+        JsonTypeInfo<TDtoCollection> jsonTypeInfo,
+        CancellationToken token = default)
+        where TDtoCollection : DtoCollectionBase<TResult, TDto>
     {
         List<TResult>? r = null;
         requestContent.AddIfNotExist("rows", $"{_itemPerRequest}").AddIfNotExist("page", "1").AddIfNotExist("order", "asc");
@@ -49,8 +51,8 @@ public class JXFWService(
         {
             requestContent["page"] = $"{i}";
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, url, requestContent, url);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var temp = await response.Content.ReadFromJsonAsync(jsonTypeInfo);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            var temp = await response.Content.ReadFromJsonAsync(jsonTypeInfo, token);
             var tempResult = temp?.Convert();
             if (r is null)
             {
@@ -68,17 +70,17 @@ public class JXFWService(
         return r;
     }
 
-    public async virtual Task<byte[]?> GetCaptcha()
+    public virtual async Task<byte[]?> GetCaptcha(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.UNDER_CAPTCHA + DateTimeOffset.Now.ToUnixTimeMilliseconds());
-            using var response = await _client.SendAsync(request);
-            return await response.Content.ReadAsByteArrayAsync();
+            using var response = await _client.SendAsync(cookies, request, token);
+            return await response.Content.ReadAsByteArrayAsync(token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取验证码异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求验证码", e);
             return null;
         }
     }
@@ -86,7 +88,11 @@ public class JXFWService(
     /// <remarks>
     /// TODO: 尚未验证 <paramref name="loginType"/> 为 <see cref="LoginType.JXFW"/> 时能否正常登录
     /// </remarks>
-    public async virtual Task<bool> Login(LoginInfo? loginInfo = null, LoginType loginType = LoginType.AuthServer)
+    public virtual async Task<bool> Login(
+        CookieContainer cookies,
+        LoginInfo? loginInfo = null,
+        LoginType loginType = LoginType.AuthServer,
+        CancellationToken token = default)
     {
         HttpRequestMessage? request = null;
         HttpResponseMessage? response = null;
@@ -96,28 +102,28 @@ public class JXFWService(
             {
                 case LoginType.AuthServer:
                     {
-                        response = await _authService.LoginAndAuth(IAuthService.SupportedServices.JXFW, loginInfo);
+                        response = await _authService.LoginAndAuth(cookies, IAuthService.SupportedServices.JXFW, loginInfo, token);
                         if (response is null) return false;
-                        using var reader = new StreamReader(response.Content.ReadAsStream());
+                        using var reader = new StreamReader(response.Content.ReadAsStream(token));
                         reader.ReadLine();  // skip
                         return reader.ReadLine()?.StartsWith("<!-- 移动端 -->") == false;
                     }
                 case LoginType.JXFW:
                     {
                         request = new(HttpMethod.Get, GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN);
-                        response = await _client.SendAsync(request);
+                        response = await _client.SendAsync(cookies, request, token);
                         request.Dispose();
                         if (response.StatusCode == HttpStatusCode.OK)   // 需要登录
                         {
                             response.Dispose();
                             if (loginInfo is null)
                             {
-                                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("登录失败，尝试登录时未给出登录信息");
+                                Log.LoginFailed(_logger, null);
                                 return false;
                             }
                             if (loginInfo.Captcha.Length != 4)
                             {
-                                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("验证码长度错误");
+                                Log.CaptchaFailed(_logger, null);
                                 return false;
                             }
                             StringBuilder sb = new();
@@ -132,9 +138,9 @@ public class JXFWService(
                                 { "verifycode", loginInfo.Captcha },
                             };
                             request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_LOGIN, content, GSConst.UNDER_LOGIN);
-                            response = await _client.SendAsync(request);
+                            response = await _client.SendAsync(cookies, request, token);
                             request.Dispose();
-                            return !(await response.Content.ReadAsStringAsync()).StartsWith("{\"code\":-");
+                            return !(await response.Content.ReadAsStringAsync(token)).StartsWith("{\"code\":-");
                         }
                         else return true;
                     }
@@ -144,7 +150,7 @@ public class JXFWService(
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证异常。 {Exception}", e);
+            Log.TryFailed(_logger, "登录", e);
             return false;
         }
         finally
@@ -154,13 +160,13 @@ public class JXFWService(
         }
     }
 
-    public async virtual Task<Term?> GetTerm()
+    public virtual async Task<Term?> GetTerm(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_TERM, referer: GSConst.UNDER_TERM);
-            using var response = await _client.SendAsync(request);
-            string responseContent = await response.Content.ReadAsStringAsync();
+            using var response = await _client.SendAsync(cookies, request, token);
+            string responseContent = await response.Content.ReadAsStringAsync(token);
             int index = responseContent.IndexOf("selected");
             return new(responseContent[(index - 2 - "202502".Length)..(index - 2)]);
             // responseContent 摘要:
@@ -168,16 +174,17 @@ public class JXFWService(
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求学期异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求学期", e);
             return null;
         }
     }
 
-    public async virtual Task<List<Lesson>?> GetLessons(Term term, int? week = null)
+    public virtual async Task<List<Lesson>?> GetLessons(CookieContainer cookies, Term term, int? week = null, CancellationToken token = default)
     {
         try
         {
             return await GetData<Lesson, LessonDto, LessonDtoCollection>(
+                cookies,
                 GSConst.UNDER_LESSONS,
                 new Dictionary<string, string>
                 {
@@ -185,36 +192,39 @@ public class JXFWService(
                     { "zc", $"{week}" },
                     { "sort", "zc,xq,jcdm" },
                 },
-                AppJsonContext.Context.LessonDtoCollection);
+                AppJsonContext.Context.LessonDtoCollection,
+                token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求课表异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求课表", e);
             return null;
         }
     }
 
-    public async virtual Task<List<ExamSchedule>?> GetExamSchedule(Term term)
+    public virtual async Task<List<ExamSchedule>?> GetExamSchedule(CookieContainer cookies, Term term, CancellationToken token = default)
     {
         try
         {
             return await GetData<ExamSchedule, ExamScheduleDto, ExamScheduleDtoCollection>(
+                cookies,
                 GSConst.UNDER_EXAM_SCHEDULE,
                 new Dictionary<string, string>
                 {
                     { "xnxqdm", $"{term.Code6}" },
                     { "sort", "zc,xq,jcdm2" },
                 },
-                AppJsonContext.Context.ExamScheduleDtoCollection);
+                AppJsonContext.Context.ExamScheduleDtoCollection,
+                token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求考试安排异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求考试安排", e);
             return null;
         }
     }
 
-    public async virtual Task<List<CourseScore>?> GetCourseScore(Term? term = null)
+    public virtual async Task<List<CourseScore>?> GetCourseScore(CookieContainer cookies, Term? term = null, CancellationToken token = default)
     {
         try
         {
@@ -225,9 +235,11 @@ public class JXFWService(
                     { "sort", "xnxqdm" },
                 };
             var result = await GetData<CourseScore, CourseScoreDto, CourseScoreDtoCollection>(
+                cookies,
                 GSConst.UNDER_COURSE_SCORE,
                 requestContent,
-                AppJsonContext.Context.CourseScoreDtoCollection);
+                AppJsonContext.Context.CourseScoreDtoCollection,
+                token);
             if (result != null && term is null)
             {
                 HashSet<string> terms = [];
@@ -237,9 +249,11 @@ public class JXFWService(
                 {
                     requestContent["xnxqdm"] = item;
                     var tempResult = await GetData<CourseScore, CourseScoreDto, CourseScoreDtoCollection>(
+                        cookies,
                         GSConst.UNDER_COURSE_SCORE,
                         requestContent,
-                        AppJsonContext.Context.CourseScoreDtoCollection);
+                        AppJsonContext.Context.CourseScoreDtoCollection,
+                        token);
                     if (tempResult != null)
                     {
                         foreach (var scoreItem in tempResult)
@@ -258,44 +272,48 @@ public class JXFWService(
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求考试成绩异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求考试成绩", e);
             return null;
         }
     }
 
-    public async virtual Task<List<CourseSel>?> GetCourseSelection()
+    public virtual async Task<List<CourseSel>?> GetCourseSelection(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             return await GetData<CourseSel, CourseSelDto, CourseSelDtoCollection>(
+                cookies,
                 GSConst.UNDER_COURSE_SEL,
                 new Dictionary<string, string> { { "sort", "kcflmc" } },
-                AppJsonContext.Context.CourseSelDtoCollection);
+                AppJsonContext.Context.CourseSelDtoCollection,
+                token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求可选课列表异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求可选课列表", e);
             return null;
         }
     }
 
-    public async virtual Task<List<CourseSel>?> GetSelectedCourse()
+    public virtual async Task<List<CourseSel>?> GetSelectedCourse(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             return await GetData<CourseSel, CourseSelDto, CourseSelDtoCollection>(
+                cookies,
                 GSConst.UNDER_COURSE_SEL_ED,
                 new Dictionary<string, string> { { "sort", "kcflmc" } },
-                AppJsonContext.Context.CourseSelDtoCollection);
+                AppJsonContext.Context.CourseSelDtoCollection,
+                token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求已选课列表异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求已选课列表", e);
             return null;
         }
     }
 
-    public async virtual Task<List<Lesson>?> GetCourseTask(string code)
+    public virtual async Task<List<Lesson>?> GetCourseTask(CookieContainer cookies, string code, CancellationToken token = default)
     {
         // 它比较特殊，不要使用 GetData() 方法
         try
@@ -313,8 +331,8 @@ public class JXFWService(
             {
                 content["page"] = $"{i}";
                 using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_COURSE_TASK, content, GSConst.UNDER_COURSE_TASK);
-                using HttpResponseMessage response = await _client.SendAsync(request);
-                var temp = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLessonDto);
+                using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+                var temp = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLessonDto, token);
                 List<Lesson>? tempResult = temp is null ? null : [..temp];
                 if (r is null)
                 {
@@ -333,71 +351,79 @@ public class JXFWService(
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求课程任务异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求课程任务", e);
             return null;
         }
     }
 
-    public async virtual Task<List<GradingExamScore>?> GetGradingExamScore()
+    public virtual async Task<List<GradingExamScore>?> GetGradingExamScore(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             return await GetData<GradingExamScore, GradingExamScoreDto, GradingExamScoreDtoCollection>(
+                cookies,
                 GSConst.UNDER_GRADING_EXAM_SCORE,
                 new Dictionary<string, string> { { "sort", "xnxqdm,kssj" } },
-                AppJsonContext.Context.GradingExamScoreDtoCollection);
+                AppJsonContext.Context.GradingExamScoreDtoCollection,
+                token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求考级成绩异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求考级成绩", e);
             return null;
         }
     }
 
-    public async virtual Task<List<AvaliableTeachingPlan>?> GetTeachingPlanList()
+    public virtual async Task<List<AvaliableTeachingPlan>?> GetTeachingPlanList(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             return await GetData<AvaliableTeachingPlan, AvaliableTeachingPlanDto, AvaliableTeachingPlanDtoCollection>(
+                cookies,
                 GSConst.UNDER_TEACHING_PLAN_AVALIABLE,
                 new Dictionary<string, string>{ { "sort", "nd" } },
-                AppJsonContext.Context.AvaliableTeachingPlanDtoCollection);
+                AppJsonContext.Context.AvaliableTeachingPlanDtoCollection,
+                token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求教学计划列表异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求教学计划列表", e);
             return null;
         }
     }
 
-    public async virtual Task<List<TeachingPlan>?> GetTeachingPlan(string planCode)
+    public virtual async Task<List<TeachingPlan>?> GetTeachingPlan(CookieContainer cookies, string planCode, CancellationToken token = default)
     {
         try
         {
             return await GetData<TeachingPlan, TeachingPlanDto, TeachingPlanDtoCollection>(
+                cookies,
                 GSConst.UNDER_TEACHING_PLAN_AVALIABLE,
                 new Dictionary<string, string> { { "sort", "kkxqmc1" } },
-                AppJsonContext.Context.TeachingPlanDtoCollection);
+                AppJsonContext.Context.TeachingPlanDtoCollection,
+                token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求教学计划异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求教学计划", e);
             return null;
         }
     }
 
-    public async virtual Task<List<SemesterReg>?> GetSemesterRegistration()
+    public virtual async Task<List<SemesterReg>?> GetSemesterRegistration(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             return await GetData<SemesterReg, SemesterRegDto, SemesterRegDtoCollection>(
+                cookies,
                 GSConst.UNDER_SEMESTER_REG,
                 new Dictionary<string, string> { { "sort", "xnxqmc" } },
-                AppJsonContext.Context.SemesterRegDtoCollection);
+                AppJsonContext.Context.SemesterRegDtoCollection,
+                token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求教学计划异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求学期注册", e);
             return null;
         }
     }

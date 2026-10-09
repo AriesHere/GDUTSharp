@@ -17,11 +17,15 @@ public class SemesterRegDto
 
     public static implicit operator SemesterReg(SemesterRegDto dto)
     {
-        return new SemesterReg
+        SemesterReg r = new()
         {
-            Term = new(dto.xnxqmc),
             Status = dto.zczt,
         };
+        if (Term.TryParse(dto.xnxqmc, out var term))
+        {
+            r.Term = term;
+        }
+        return r;
     }
 }
 

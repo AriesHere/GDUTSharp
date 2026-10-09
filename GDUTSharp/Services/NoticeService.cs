@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
@@ -41,21 +42,23 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         return ICommonClient.CreateRequest(HttpMethod.Post, GSConst.NOTICE_CATEGORIES_GET, content);
     }
 
-    public async virtual Task<(Dictionary<string, string> MainCategories, Dictionary<string, string> SubCategories)?> Preprocess()
+    public virtual async Task<(Dictionary<string, string> MainCategories, Dictionary<string, string> SubCategories)?> Preprocess(
+        CookieContainer cookies,
+        CancellationToken token = default)
     {
         HttpRequestMessage? request = null;
         HttpResponseMessage? response = null;
         try
         {
             request = new(HttpMethod.Get, GSConst.NOTICE_BEFORE_LOGIN);
-            response = await _client.SendAsync(request);
+            response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
             response.Dispose();
 
             request = new(HttpMethod.Get, GSConst.NOTICE_CATEGORIES);
-            response = await _client.SendAsync(request);
+            response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
-            var r = await response.Content.ReadAsStringAsync();
+            var r = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
 
             var matches = Helper.Notice_CategoriesRegex().Matches(r);
@@ -63,24 +66,20 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
             {
                 throw new ArgumentException("正则匹配失败");
             }
-            int flag = 0;
             Dictionary<string, string> mainCategories = [];
             Dictionary<string, string> subCategories = [];
-            foreach (Match m in matches)
+            for (int i = 0; i < matches.Count; i++)
             {
-                if (string.IsNullOrWhiteSpace(m.Groups["value"].Value))
-                {
-                    flag++;
+                if (string.IsNullOrWhiteSpace(matches[i].Groups["value"].Value))
                     continue;
-                }
-                (flag >= 2 ? mainCategories : subCategories).Add(m.Groups["text"].Value, m.Groups["value"].Value);
+                (i >= 2 ? mainCategories : subCategories).Add(matches[i].Groups["text"].Value, matches[i].Groups["value"].Value);
             }
 
             return (mainCategories, subCategories);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("预处理异常。 {Exception}", e);
+            Log.TryFailed(_logger, "预处理异常。 {Exception}", e);
             return null;
         }
         finally
@@ -90,17 +89,17 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         }
     }
     
-    public async virtual Task<NoticeCollection?> GetNoticeCollection(string id, int pageNumber, int pageSize)
+    public virtual async Task<NoticeCollection?> GetNoticeCollection(CookieContainer cookies, string id, int pageNumber, int pageSize, CancellationToken token = default)
     {
         try
         {
             using HttpRequestMessage request = this.CreateRequest(id, pageNumber, pageSize);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.NoticeDtoCollection);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.NoticeDtoCollection, token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取通知数据时抛出异常。 {Exception}", e);
+            Log.TryFailed(_logger, "获取通知数据时抛出异常。 {Exception}", e);
             return null;
         }
     }

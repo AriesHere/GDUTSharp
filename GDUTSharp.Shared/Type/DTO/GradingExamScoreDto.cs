@@ -59,6 +59,10 @@ public class GradingExamScoreDto
             PermissionNumber = dto.zkzh,
             Score = dto.zcj,
         };
+        if (Term.TryParse(dto.xnxqmc, out var term))
+        {
+            r.Term = term;
+        }
         if (dto.kjkcbh == "CET4" || dto.kjkcbh == "CET6")
         {
             //              [听力成绩,          阅读成绩,          写作成绩,          口语成绩]

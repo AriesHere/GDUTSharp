@@ -369,12 +369,12 @@ public static class Extensions
         /// <param name="year">
         /// 四位数字的年份，填秋季的那年，如某一学年的上学期为2025秋季，下学期为2026春季，則 year 应为 "2025"
         /// </param>
-        public async Task<(int term1Count, int term2Count, float GPA, float averageGrade)> GetGPAAndAverageGrade(int year)
+        public async Task<(int term1Count, int term2Count, float GPA, float averageGrade)> GetGPAAndAverageGrade(CookieContainer cookies, int year, CancellationToken token = default)
         {
             Term term = new(year, TermPeriod.First);
-            var scores1 = await dataService.GetCourseScore(term);
-            term = term.Next();
-            var scores2 = await dataService.GetCourseScore(term);
+            var scores1 = await dataService.GetCourseScore(cookies, term, token);
+            term.Period = TermPeriod.Second;
+            var scores2 = await dataService.GetCourseScore(cookies, term, token);
             if (scores1 is null || scores2 is null)
             {
                 throw new NullReferenceException("课程成绩获取异常");

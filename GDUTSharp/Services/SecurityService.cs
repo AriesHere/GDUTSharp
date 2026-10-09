@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using GDUTSharp.Interfaces;
+using GDUTSharp.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services
@@ -24,7 +25,7 @@ namespace GDUTSharp.Services
             }
             catch (Exception e)
             {
-                if (_logger.IsEnabled(LogLevel.Critical)) _logger.LogCritical("加密失败。{Exception}", e);
+                Log.TryFailed(_logger, "加密", e);
                 throw;
             }
         }
@@ -43,7 +44,7 @@ namespace GDUTSharp.Services
             }
             catch (Exception e)
             {
-                if (_logger.IsEnabled(LogLevel.Critical)) _logger.LogCritical("解密失败。{Exception}", e);
+                Log.TryFailed(_logger, "解密", e);
                 throw;
             }
         }

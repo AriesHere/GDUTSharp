@@ -1,0 +1,5 @@
+﻿[*.cs]
+
+# 临时，仅用于代码清理时使用
+# CA2016: Forward the 'CancellationToken' parameter to methods
+dotnet_diagnostic.CA2016.severity = warning

@@ -40,29 +40,27 @@ GDUTSharp.Extra:
 IHost AppHost = Host.CreateDefaultBuilder()
     .ConfigureServices((context, services) =>
     {
-        // 如果需要隔离多用户，请 AddScoped
         services.AddSingleton<INoticeService, NoticeService>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<ILibraryService, LibraryService>();
         services.AddSingleton<IJXFWService, JXFWService>();
+        services.AddSingleton<ISportsTestService, SportsTestService>();
         services.AddSingleton<ISecurityService, SecurityService>();
-        // 使用此方法以自动完成对CommonClient的所有配置
         services.AddCommonClient(context.Configuration);
     })
     .Build();
-AppHost.RunAsync();
+AppHost.Start();
 
-// 这里填充学号和密码
 LoginInfo testLoginInfo = new() { UserName = "", Password = "" };
 var logger = AppHost.Services.GetRequiredService<ILogger<Program>>();
 var jxfw = AppHost.Services.GetRequiredService<IJXFWService>();
-var r = await jxfw.Login(testLoginInfo);
-logger.LogCritical("登录结果:{Result}", r); // 自行处理登录失败时的情况
-var term = jxfw.GetTerm().Result;   // 获取学期
-if (term is not null && await jxfw.GetLessons(term) is List<Lesson> lessons)
+var cookies = new CookieContainer();    // 通过 CookieContainer 隔离多个用户
+var r = await jxfw.Login(cookies, testLoginInfo); // 自行处理登录失败时的情况
+logger.LogCritical("登录结果:{Result}", r);
+var term = jxfw.GetTerm(cookies).Result;    // 获取学期
+if (term is not null && await jxfw.GetLessons(cookies, term) is List<Lesson> lessons)
 {
-    // 以下是 GDUTSharp.Extra 的功能之一：
-    // 导出课程为 iCalendar 文件以便于导入其它日历程序中
+    // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入其它日历程序中
     await File.WriteAllTextAsync("path/to/file",
         lessons.ToCalendarString(new GDUTSharp.Extra.Types.ICalConvertOptions()
             {

@@ -9,31 +9,30 @@ using Microsoft.Extensions.Options;
 
 namespace GDUTSharp.Services;
 
-public class CommonClient(ILogger<CommonClient> logger, HttpClient httpClient, HttpConcurrencyLimiter concurrencyLimiter) : ICommonClient
+public class CommonClient(ILogger<CommonClient> logger, IHttpClientFactory factory, HttpConcurrencyLimiter concurrencyLimiter) : ICommonClient
 {
     protected readonly ILogger<CommonClient> _logger = logger;
-    protected readonly HttpClient _httpClient = httpClient;
+    protected readonly IHttpClientFactory _factory = factory;
     protected readonly HttpConcurrencyLimiter _concurrencyLimiter = concurrencyLimiter;
 
-    public CookieContainer CookieContainer { get; } = new();
-
-    public async virtual Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken = default)
+    public virtual async Task<HttpResponseMessage> SendAsync(CookieContainer cookies, HttpRequestMessage request, CancellationToken cancellationToken = default)
     {
         await _concurrencyLimiter.WaitAsync(cancellationToken);
         try
         {
-            Exception.ThrowIfNull(request.RequestUri, "请求 URI 不能为 null");
-            var cookieHeader = CookieContainer.GetCookieHeader(request.RequestUri!);
+            ArgumentException.ThrowIfNullOrEmpty(request.RequestUri?.ToString(), nameof(request.RequestUri));
+            var cookieHeader = cookies.GetCookieHeader(request.RequestUri);
             if (!string.IsNullOrEmpty(cookieHeader)) request.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
-            var response = await _httpClient.SendAsync(request, cancellationToken);
+            using var client = _factory.CreateClient(CommonClientExtensions.ClientName);
+            var response = await client.SendAsync(request, cancellationToken);
             if (response.Headers.TryGetValues("Set-Cookie", out var setCookieValues))
             {
                 foreach (var cookieValue in setCookieValues)
                 {
-                    try { CookieContainer.SetCookies(request.RequestUri!, cookieValue); }
-                    catch (Exception ex) when (ex is CookieException or ArgumentException)
+                    try { cookies.SetCookies(request.RequestUri, cookieValue); }
+                    catch (Exception e) when (e is CookieException or ArgumentException)
                     {
-                        if (_logger.IsEnabled(LogLevel.Warning)) _logger.LogWarning(ex, "忽略非法 Set-Cookie: {Cookie}", cookieValue);
+                        Log.IgnoreInvalidSetCookie(_logger, cookieValue, e);
                     }
                 }
             }
@@ -45,6 +44,8 @@ public class CommonClient(ILogger<CommonClient> logger, HttpClient httpClient, H
 
 public static class CommonClientExtensions
 {
+    public const string ClientName = "GDUTSharp.CommonClient";
+
     public static IServiceCollection AddCommonClient(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -52,7 +53,8 @@ public static class CommonClientExtensions
         services.Configure<HttpOptions>(configuration.GetSection(nameof(HttpOptions)))
             .AddSingleton<HttpConcurrencyLimiter>()
             .AddTransient<RetryHandler>()
-            .AddHttpClient<ICommonClient, CommonClient>((sp, client) =>
+            .AddTransient<ICommonClient, CommonClient>()
+            .AddHttpClient(ClientName, (sp, client) =>
             {
                 var options = sp.GetRequiredService<IOptions<HttpOptions>>().Value;
                 client.Timeout = TimeSpan.FromMilliseconds(options.OverallTimeout);
@@ -64,7 +66,7 @@ public static class CommonClientExtensions
                 {
                     MaxConnectionsPerServer = options.MaxConnectionsPerServer,
                     PooledConnectionIdleTimeout = TimeSpan.FromMilliseconds(options.PooledConnectionIdleTimeout),
-                    AllowAutoRedirect = true,
+                    PooledConnectionLifetime = TimeSpan.FromMilliseconds(options.OverallTimeout),
                 };
                 return handler;
             })

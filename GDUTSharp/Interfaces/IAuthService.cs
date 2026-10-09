@@ -1,4 +1,5 @@
-﻿using GDUTSharp.Shared.Type;
+﻿using System.Net;
+using GDUTSharp.Shared.Type;
 
 namespace GDUTSharp.Interfaces;
 
@@ -18,27 +19,35 @@ public interface IAuthService
     /// <br/>
     /// 对于同一用户，无需反复登录。对于同一用户在同一系统的操作，无需反复认证。
     /// </remarks>
-    public Task<HttpResponseMessage?> LoginAndAuth(SupportedServices? service = null, LoginInfo ? loginInfo = null);
+    public Task<HttpResponseMessage?> LoginAndAuth(
+        CookieContainer cookies,
+        SupportedServices? service = null,
+        LoginInfo ? loginInfo = null,
+        CancellationToken token = default);
 
     /// <remarks>
     /// 注意：即使未登录，调用本方法也会返回 true，因为统一认证中心的登出操作是幂等的
     /// </remarks>
-    public Task<bool> Logout();
+    public Task<bool> Logout(CookieContainer cookies, CancellationToken token = default);
 
     /// <summary>
     /// 检查是否需要验证码
     /// </summary>
     /// <param name="username">学号</param>
-    public Task<bool> CheckNeedCaptcha(string username);
+    public Task<bool> CheckNeedCaptcha(CookieContainer cookies, string username, CancellationToken token = default);
 
     /// <summary>获取验证码</summary>
-    public Task<AuthServerCaptcha?> GetCaptcha();
+    public Task<AuthServerCaptcha?> GetCaptcha(CookieContainer cookies, CancellationToken token = default);
 
     /// <summary>向统一认证中心服务提交验证码并检查是否验证通过</summary>
     /// <remarks>
     /// <b>TODO：尚未验证此方法的有效性</b>
     /// </remarks>
-    public Task<bool> SubmitCaptcha(SliderPayloadDto payload, AuthServerCaptcha captcha);
+    public Task<bool> SubmitCaptcha(
+        CookieContainer cookies,
+        SliderPayloadDto payload,
+        AuthServerCaptcha captcha,
+        CancellationToken token = default);
 
     public enum SupportedServices
     {

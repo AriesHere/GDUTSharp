@@ -13,35 +13,35 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
     protected ICommonClient _client = client;
     protected ISecurityService _security = security;
 
-    public async virtual Task<byte[]?> GetCaptcha()
+    public virtual async Task<byte[]?> GetCaptcha(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SPORTS_TEST_CAPTCHA);
-            using var response = await _client.SendAsync(request);
-            return await response.Content.ReadAsByteArrayAsync();
+            using var response = await _client.SendAsync(cookies, request, token);
+            return await response.Content.ReadAsByteArrayAsync(token);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取验证码失败。{e}", e);
+            Log.TryFailed(_logger, "获取验证码", e);
             return null;
         }
     }
 
-    public async virtual Task<List<string>?> GetYears()
+    public virtual async Task<List<string>?> GetYears(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SPORTS_TEST_PERSONAL);
-            using var response = await _client.SendAsync(request);
+            using var response = await _client.SendAsync(cookies, request, token);
             if (response.StatusCode is HttpStatusCode.Found)
             {
-                if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("未登录或登录状态失效");
+                Log.LoginStatusInvalid(_logger);
                 return null;
             }
             else
             {
-                var content = await response.Content.ReadAsStringAsync();
+                var content = await response.Content.ReadAsStringAsync(token);
                 List<string> result = [];
                 var temp = content.Extract("<a lay-href=\"PHTest_StudentScore.aspx\">", '年', out var cur);
                 if (temp.Length == 4) result.Add(temp);
@@ -55,19 +55,19 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取有体测成绩的年份失败。{e}", e);
+            Log.TryFailed(_logger, "获取有体测成绩的年份", e);
             return null;
         }
     }
 
-    public async virtual Task<bool> Login(LoginInfo loginInfo)
+    public virtual async Task<bool> Login(CookieContainer cookies, LoginInfo loginInfo, CancellationToken token = default)
     {
         HttpRequestMessage? request = null;
         HttpResponseMessage? response = null;
         try
         {
             request = new(HttpMethod.Get, GSConst.SPORTS_TEST_PERSONAL);
-            response = await _client.SendAsync(request);
+            response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
             var status = response.StatusCode;
             var location = response.Headers.Location;
@@ -79,9 +79,9 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
             // 如果需要登录， status 应为 302 Found, location 应该不是 null
             // TODO: 由于使用了自动重定向，可能会导致 location 为 null
             request = new(HttpMethod.Get, location);
-            response = await _client.SendAsync(request);
+            response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
 
             var viewState = content.Extract("id=\"__VIEWSTATE\" value=\"", '"', out var cur);
@@ -129,14 +129,14 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
                 { "hidReferUrl", hidReferUrl },
             };
             request = ICommonClient.CreateRequest(HttpMethod.Post, location!.AbsoluteUri, requestContent);
-            response = await _client.SendAsync(request);
+            response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
-            var r = await response.Content.ReadAsStringAsync();
+            var r = await response.Content.ReadAsStringAsync(token);
             return r.StartsWith("<script language='javascript'>");
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("登录失败。{e}", e);
+            Log.TryFailed(_logger, "登录", e);
             return false;
         }
         finally
@@ -146,13 +146,13 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         }
     }
 
-    public async virtual Task<SportsTestScore?> GetScore(string year)
+    public virtual async Task<SportsTestScore?> GetScore(CookieContainer cookies, string year, CancellationToken token = default)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SPORTS_TEST_SCORE + year);
-            using var response = await _client.SendAsync(request);
-            var html = await response.Content.ReadAsStringAsync();
+            using var response = await _client.SendAsync(cookies, request, token);
+            var html = await response.Content.ReadAsStringAsync(token);
             var cur = html.IndexOf("未查询到该学生ID");
             if (cur != -1) return null;   // 检查是否有成绩
             cur = 0;
@@ -256,7 +256,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取体测成绩失败。{e}", e);
+            Log.TryFailed(_logger, "获取体测成绩", e);
             return null;
         }
 

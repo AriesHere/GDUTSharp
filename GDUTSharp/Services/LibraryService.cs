@@ -15,57 +15,54 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
     protected readonly ILogger<LibraryService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
-    /// <remarks>
-    /// 某些请求需要在请求头添加 HeaderName: "jwtOpacAuth" HeaderValue: _jwtOpacAuth
-    /// 如<see cref="GetDailyRecommand"/>
-    /// </remarks>
-    protected string _jwtOpacAuth = string.Empty;
 
-    public async virtual Task<bool> Login(LoginInfo? loginInfo = null)
+    public virtual async Task<(bool IsSuccess, string? JwtOpacAuth)> Login(
+        CookieContainer cookies,
+        LoginInfo? loginInfo = null,
+        CancellationToken token = default)
     {
         HttpRequestMessage? request = null;
         HttpResponseMessage? response = null;
         try
         {
-            response = await _authService.LoginAndAuth(IAuthService.SupportedServices.LIBRARY, loginInfo);
-            if (response is null) return false;
+            response = await _authService.LoginAndAuth(cookies, IAuthService.SupportedServices.LIBRARY, loginInfo, token);
+            if (response is null) return (false, null);
 
-            using var reader = new StreamReader(response.Content.ReadAsStream());
+            using var reader = new StreamReader(response.Content.ReadAsStream(token));
             reader.ReadLine();  // skip
             if (reader.ReadLine()?.StartsWith("<!-- 移动端 -->") == true)
             {
-                // 登录失败
-                return false;
+                Log.LoginFailed(_logger, null);
+                return (false, null);
             }
 
-            var r = await response.Content.ReadAsStringAsync();
+            var r = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
             string refValue = WebUtility.HtmlDecode(r.Extract("value=\"", '"', out _));
             request = new(HttpMethod.Get, refValue);
             request.Headers.Referrer = new(GSConst.LIBRARY_LOGIN);
-            response = await _client.SendAsync(request);
+            response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
 
-            r = await response.Content.ReadAsStringAsync();
+            r = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
-            int valueIndex1 = r.IndexOf("name=\"refer\" value=\"");
-            string refValue1 = WebUtility.HtmlDecode(r.Extract("name=\"refer\" value=\"", '"', out _));
-            request = new(HttpMethod.Get, refValue1);
-            response = await _client.SendAsync(request);
+            refValue = WebUtility.HtmlDecode(r.Extract("name=\"refer\" value=\"", '"', out _));
+            request = new(HttpMethod.Get, refValue);
+            response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
 
             r = response.RequestMessage?.RequestUri?.AbsoluteUri;
             response.Dispose();
-            Exception.ThrowIfNull(r, "获取 jwtOpacAuth 失败。");
+            ArgumentException.ThrowIfNullOrEmpty(r);
 
-            _client.CookieContainer.Add(new Cookie("jwt", r!.Extract("jwt=", "&jwtHeader", out _), null, "gdut.edu.cn"));
-            _client.CookieContainer.Add(new Cookie("jwtHeader", "jwtOpacAuth", null, "gdut.edu.cn"));
-            return true;
+            cookies.Add(new Cookie("jwt", r!.Extract("jwt=", "&jwtHeader", out _), null, "gdut.edu.cn"));
+            cookies.Add(new Cookie("jwtHeader", "jwtOpacAuth", null, "gdut.edu.cn"));
+            return (true, r);
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证异常。 {Exception}", e);
-            return false;
+            Log.TryFailed(_logger, "图书馆登录", e);
+            return (false, null);
         }
         finally
         {
@@ -74,7 +71,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
         }
     }
 
-    public async virtual Task<List<BookInfo>?> GetBorrowedBooks()
+    public virtual async Task<List<BookInfo>?> GetBorrowedBooks(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
@@ -93,32 +90,32 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
             {
                 Content = new StringContent(requestContent, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
             };
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.BorrowedBookDtoCollection);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.BorrowedBookDtoCollection, token);
             return result;
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求图书借阅列表异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求图书借阅列表", e);
             return null;
         }
     }
 
-    public async virtual Task<BookInfo?> GetDailyRecommend()
+    public virtual async Task<BookInfo?> GetDailyRecommend(CookieContainer cookies, string? jwtOpacAuth = null, CancellationToken token = default)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.LIBRARY_DAILY_RECOMMEND);
             request.Headers.Referrer = new(GSConst.LIBRARY_DAILY_RECOMMEND);
-            request.Headers.Add("jwtOpacAuth", _jwtOpacAuth);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.DailyRecommandDtoCollection);
+            if (jwtOpacAuth is not null) request.Headers.Add("jwtOpacAuth", jwtOpacAuth);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.DailyRecommandDtoCollection, token);
             if (result is null) return null;
             else return result;
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("请求图书馆每日推荐异常。 {Exception}", e);
+            Log.TryFailed(_logger, "请求图书馆每日推荐", e);
             return null;
         }
     }

@@ -49,7 +49,11 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
 
     #endregion
 
-    public async virtual Task<HttpResponseMessage?> LoginAndAuth(IAuthService.SupportedServices? service = null, LoginInfo ? loginInfo = null)
+    public virtual async Task<HttpResponseMessage?> LoginAndAuth(
+        CookieContainer cookies,
+        IAuthService.SupportedServices? service = null,
+        LoginInfo ? loginInfo = null,
+        CancellationToken token = default)
     {
         HttpRequestMessage? request = null;
         try
@@ -61,21 +65,21 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                 _ => GSConst.AUTHSERVER_LOGIN,
             };
             request = new HttpRequestMessage(HttpMethod.Post, url);
-            HttpResponseMessage response = await _client.SendAsync(request);
+            HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
 
             if (response.StatusCode == HttpStatusCode.OK)   // 需要登录
             {
                 if (loginInfo is null)
                 {
-                    if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证失败，尝试登录时未给出登录信息");
+                    Log.LoginFailed(_logger, null);
                     return null;
                 }
                 else
                 {
-                    if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在登录并认证");
+                    Log.LoginAndAuth(_logger);
                     var formData = new Dictionary<string, string>();
-                    string html = await response.Content.ReadAsStringAsync();
+                    string html = await response.Content.ReadAsStringAsync(token);
                     response.Dispose();
 
                     // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这样，
@@ -97,16 +101,16 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                         GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
                         formData,
                         GSConst.UNDER_GRADUATE_LOGIN);
-                    response = await _client.SendAsync(request);
+                    response = await _client.SendAsync(cookies, request, token);
                 }
             }
-            else if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在认证");
+            else Log.Login(_logger);
 
             return response;
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证或登录异常。 {Exception}", e);
+            Log.TryFailed(_logger, "登录或认证", e);
             return null;
         }
         finally
@@ -115,64 +119,60 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         }
     }
 
-    public async virtual Task<bool> Logout()
+    public virtual async Task<bool> Logout(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_LOGOUT);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var r = await response.Content.ReadAsStringAsync();
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("注销成功");
-        }
-        catch (CookieException e) when (e.Message.Contains("Domain") && e.Message.Contains("wisedu.com.cn"))
-        {
-            // 预料中的异常（不过退出登录依然成功）：
-            // 退出登录失败 System.Net.CookieException: An error occurred when parsing the Cookie header for Uri 'https://authserver.gdut.edu.cn/authserver/logout'.
-            //        ---> System.Net.CookieException: The 'Domain'='wisedu.com.cn' part of the cookie is invalid.
-            if (_logger.IsEnabled(LogLevel.Warning)) _logger.LogWarning("预料中的异常 {Exception}", e);
-            return true;
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("退出登录失败 {Exception}", e);
+            Log.TryFailed(_logger, "退出登录", e);
             return false;
         }
     }
 
-    public async virtual Task<bool> CheckNeedCaptcha(string username)
+    public virtual async Task<bool> CheckNeedCaptcha(CookieContainer cookies, string username, CancellationToken token = default)
     {
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_CHECK_CAPTCHA_PREFIX + username);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var r = await response.Content.ReadAsStringAsync();
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("true");
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("检查是否需要验证码失败 {Exception}", e);
+            Log.TryFailed(_logger, "检查是否需要验证码", e);
             return false;
         }
     }
 
-    public async virtual Task<AuthServerCaptcha?> GetCaptcha()
+    public virtual async Task<AuthServerCaptcha?> GetCaptcha(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_CAPTCHA_GET);
-            using HttpResponseMessage response = await _client.SendAsync(request);
-            var r = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AuthServerCaptchaDto);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            var r = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AuthServerCaptchaDto, token);
             if (r is null) return null;
             return r;
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("获取验证码失败 {Exception}", e);
+            Log.TryFailed(_logger, "获取验证码", e);
             return null;
         }
     }
 
-    public async virtual Task<bool> SubmitCaptcha(SliderPayloadDto payload, AuthServerCaptcha captcha)
+    public virtual async Task<bool> SubmitCaptcha(
+        CookieContainer cookies,
+        SliderPayloadDto payload,
+        AuthServerCaptcha captcha,
+        CancellationToken token = default)
     {
         try
         {
@@ -180,13 +180,13 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
             string sign = Convert.ToBase64String(_security.AesCbcEncrypt(this.PrefixProcess(json), captcha.SmallImage.ToBytes()[^16..], _security.GenIV()));
             var content = new Dictionary<string, string> { {"sign", sign} };
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.AUTHSERVER_CAPTCHA_VERIFY, content);
-            using var response = await _client.SendAsync(request);
-            var r = await response.Content.ReadAsStringAsync();
+            using var response = await _client.SendAsync(cookies, request, token);
+            var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("success");
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("校验验证码失败 {Exception}", e);
+            Log.TryFailed(_logger, "校验验证码", e);
             return false;
         }
     }

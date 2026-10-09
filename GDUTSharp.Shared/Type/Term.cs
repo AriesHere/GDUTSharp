@@ -62,6 +62,20 @@ public class Term
 
     public static Term Parse(string value) => new(value);
 
+    public static bool TryParse(string value, out Term term)
+    {
+        try
+        {
+            term = new(value);
+            return true;
+        }
+        catch
+        {
+            term = new();
+            return false;
+        }
+    }
+
     public Term Next()
     {
         Term t = new(this.Year, this.Period);

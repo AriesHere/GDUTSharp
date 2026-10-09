@@ -51,10 +51,9 @@ public class CourseScoreDto
 
     public static implicit operator CourseScore(CourseScoreDto dto)
     {
-        return new()
+        CourseScore r = new()
         {
             Category = dto.kcflmc,
-            Term = new(dto.xnxqmc),
             Type = dto.kcdlmc,
             Gp = dto.cjjd,
             Name = dto.kcmc,
@@ -65,6 +64,11 @@ public class CourseScoreDto
             StudyMode = dto.xdfsmc,
             GradeScale = dto.cjfsmc,
         };
+        if (Term.TryParse(dto.xnxqmc, out var term))
+        {
+            r.Term = term;
+        }
+        return r;
     }
 }
 

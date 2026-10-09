@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
   <Project Path="GDUTSharp.Extra/GDUTSharp.Extra.csproj" />
   <Project Path="GDUTSharp.Shared/GDUTSharp.Shared.shproj" Id="52f5c502-4662-4b7f-add8-71132dcc34f5" />
   <Project Path="GDUTSharp.SourceGen/GDUTSharp.SourceGen.csproj" Id="4a5c6f24-c040-492e-b49d-8e0e3048725b" />

@@ -76,7 +76,7 @@ public class LessonDto
 
     public static implicit operator Lesson(LessonDto dto)
     {
-        return new()
+        Lesson r = new()
         {
             Name = dto.kcmc,
             ClassName = dto.ClassName,
@@ -90,8 +90,12 @@ public class LessonDto
             LessonSequence = dto.kxh,
             LessonType = dto.jxhjmc,
             Profile = WebUtility.HtmlDecode(dto.sknrjj),
-            Term = new(dto.xnxqdm),
         };
+        if (Term.TryParse(dto.xnxqdm, out var term))
+        {
+            r.Term = term;
+        }
+        return r;
     }
 }
 

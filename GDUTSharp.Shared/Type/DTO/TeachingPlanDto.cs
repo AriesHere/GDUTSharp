@@ -92,7 +92,7 @@ public class TeachingPlanDto
 
     public static implicit operator TeachingPlan(TeachingPlanDto dto)
     {
-        return new TeachingPlan
+        TeachingPlan r = new()
         {
             ProgramName = dto.jhfxmc,
             CourseCode = dto.kcbh,
@@ -107,6 +107,11 @@ public class TeachingPlanDto
             StudyMode = dto.xdfsmc,
             Term = new(dto.xnxqdm1),
         };
+        if (Term.TryParse(dto.xnxqdm1, out var term))
+        {
+            r.Term = term;
+        }
+        return r;
     }
 }
 

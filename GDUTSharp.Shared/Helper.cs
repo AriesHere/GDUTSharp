@@ -26,14 +26,6 @@ public static partial class Helper
         }
     }
 
-    extension(Exception)
-    {
-        public static void ThrowIfNull(object? obj, string message)
-        {
-            if (obj is null) throw new ArgumentNullException(message);
-        }
-    }
-
     public static string GetString(this byte[] b) => Encoding.UTF8.GetString(b);
 
     public static Dictionary<TKey, TValue> AddIfNotExist<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull

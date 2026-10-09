@@ -17,7 +17,11 @@ namespace GDUTSharp.Extra.Services;
 public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient client, ISecurityService security)
     : AuthService(logger, client, security)
 {
-    public async override Task<HttpResponseMessage?> LoginAndAuth(IAuthService.SupportedServices? service = null, LoginInfo? loginInfo = null)
+    public async override Task<HttpResponseMessage?> LoginAndAuth(
+        CookieContainer cookies,
+        IAuthService.SupportedServices? service = null,
+        LoginInfo? loginInfo = null,
+        CancellationToken token = default)
     {
         try
         {
@@ -28,23 +32,23 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
                 _ => GSConst.AUTHSERVER_LOGIN,
             };
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
-            HttpResponseMessage response = await _client.SendAsync(request);
+            HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 // 需要登录
                 if (loginInfo is null)
                 {
-                    if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证失败，尝试登录时未给出登录信息");
+                    Log.LoginFailed(_logger, null);
                     return null;
                 }
                 else
                 {
-                    if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在登录并认证");
+                    Log.LoginAndAuth(_logger);
                     var formData = new Dictionary<string, string>();
                     string pwdEncryptSalt = string.Empty;
                     var doc = new HtmlDocument();
-                    doc.Load(await response.Content.ReadAsStreamAsync());
+                    doc.Load(await response.Content.ReadAsStreamAsync(token));
                     response.Dispose();
                     var hiddenInputs = doc.DocumentNode.SelectNodes("//*[@id=\"pwdFromId\"]//input[@type=\"hidden\"]") // 对应原来的css选择器 #pwdFromId input[type=hidden]
                         ?? throw new NullReferenceException("查找 html 元素失败");
@@ -70,32 +74,16 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
                         GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
                         formData,
                         GSConst.UNDER_GRADUATE_LOGIN);
-                    response = await _client.SendAsync(request2);
+                    response = await _client.SendAsync(cookies, request2, token);
                 }
             }
-            else
-            {
-                if (_logger.IsEnabled(LogLevel.Information)) _logger.LogInformation("正在认证");
-            }
-
-            for (int i = 0; i < 5; i++)
-            {
-                if (response.StatusCode != HttpStatusCode.Redirect && response.StatusCode != HttpStatusCode.MovedPermanently)
-                    break;
-                string? location = response.Headers.Location?.AbsoluteUri;
-                if (string.IsNullOrEmpty(location))
-                    break;
-                if (_logger.IsEnabled(LogLevel.Debug)) _logger.LogDebug("[第 {redirectCount} 次重定向] → {location}", i + 1, location);
-                response.Dispose();
-                using var redirectRequest = new HttpRequestMessage(HttpMethod.Get, location);
-                response = await _client.SendAsync(redirectRequest);
-            }
+            else Log.Login(_logger);
 
             return response;
         }
         catch (Exception e)
         {
-            if (_logger.IsEnabled(LogLevel.Error)) _logger.LogError("认证或登录异常。 {Exception}", e);
+            Log.TryFailed(_logger, "登录或认证", e);
             return null;
         }
     }
