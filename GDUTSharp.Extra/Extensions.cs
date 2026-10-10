@@ -17,20 +17,18 @@ public static class Extensions
     extension(Lesson lesson)
     {
         /// <remaeks>部分信息不会写入（如学生人数、学期、班级名称）</remaeks>
-        public List<CalendarEvent> ToCalendarEvent(ICalConvertOptions context)
+        public List<CalendarEvent> ToCalendarEvent(ICalConvertOptions opt)
         {
             List<CalendarEvent> result = [];
-            bool useDate = lesson.Date is { };
-
             List<(TimeOnly, TimeOnly)> temp = [];
-            if (context.IsMergeIfContinuous)
+            if (opt.IsMergeIfContinuous)
             {
                 var groups = lesson.Sessions.SplitIntoConsecutiveGroups();
                 foreach (var item in groups)
-                    temp.Add(new(context.Sessions[item[0] - 1].StartTime, context.Sessions[item[^1] - 1].EndTime));
+                    temp.Add(new(opt.Sessions[item[0] - 1].StartTime, opt.Sessions[item[^1] - 1].EndTime));
             }
             else foreach (var item in lesson.Sessions)
-                temp.Add(new(context.Sessions[item - 1].StartTime, context.Sessions[item - 1].EndTime));
+                temp.Add(new(opt.Sessions[item - 1].StartTime, opt.Sessions[item - 1].EndTime));
 
             foreach (var (start, end) in temp)
             {
@@ -43,17 +41,17 @@ public static class Extensions
                 // time
                 DateTime dtStart;
                 DateTime dtEnd;
-                if (useDate)
+                if (lesson.Date is { })
                 {
                     dtStart = lesson.Date.ToDateTime(start);
                     dtEnd = lesson.Date.ToDateTime(end);
                 }
                 else
                 {
-                    if (context.StartDate is not null)
+                    if (opt.StartDate is not null)
                     {
-                        dtStart = context.StartDate.Value.ToDateTime(start).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
-                        dtEnd = context.StartDate.Value.ToDateTime(end).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
+                        dtStart = opt.StartDate.Value.ToDateTime(start).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
+                        dtEnd = opt.StartDate.Value.ToDateTime(end).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
                     }
                     else
                     {
@@ -63,9 +61,9 @@ public static class Extensions
                 c.Start = new(dtStart);
                 c.End = new(dtEnd);
 
-                if (context.Alarm is not null)
+                if (opt.SetAlarm(lesson) is { } alarm)
                 {
-                    c.Alarms.Add(context.Alarm);
+                    c.Alarms.Add(alarm);
                 }
                 result.Add(c);
             }
@@ -76,18 +74,18 @@ public static class Extensions
     // List<Lesson>
     extension(List<Lesson> lessonList)
     {
-        public Calendar ToCalendar(ICalConvertOptions context)
+        public Calendar ToCalendar(ICalConvertOptions opt)
         {
             Calendar result = new();
-            lessonList.ForEach(l => l.ToCalendarEvent(context).ForEach(result.Events.Add));
+            lessonList.ForEach(l => l.ToCalendarEvent(opt).ForEach(result.Events.Add));
             return result;
         }
 
-        public string? ToCalendarString(ICalConvertOptions context) =>
-            new CalendarSerializer().SerializeToString(lessonList.ToCalendar(context));
+        public string? ToCalendarString(ICalConvertOptions opt) =>
+            new CalendarSerializer().SerializeToString(lessonList.ToCalendar(opt));
 
-        public async Task WriteAsICS(string path, ICalConvertOptions context) =>
-            await File.WriteAllTextAsync(path, lessonList.ToCalendarString(context));
+        public async Task WriteAsICS(string path, ICalConvertOptions opt) =>
+            await File.WriteAllTextAsync(path, lessonList.ToCalendarString(opt));
 
         /// <summary>
         /// 解析从教学服务中心导出的课程安排文件
@@ -221,7 +219,7 @@ public static class Extensions
     // ExamSchedule
     extension(ExamSchedule schedule)
     {
-        public CalendarEvent ToCalendarEvent(ICalConvertOptions context)
+        public CalendarEvent ToCalendarEvent(ICalConvertOptions opt)
         {
             DateTime dtStart = schedule.Date.ToDateTime(schedule.StartTime);
             DateTime dtEnd = schedule.Date.ToDateTime(schedule.EndTime);
@@ -242,9 +240,9 @@ public static class Extensions
                 Start = new(dtStart),
                 End = new(dtEnd),
             };
-            if (context.Alarm is not null)
+            if (opt.Alarm is not null)
             {
-                c.Alarms.Add(context.Alarm);
+                c.Alarms.Add(opt.Alarm);
             }
             return c;
         }
@@ -253,18 +251,18 @@ public static class Extensions
     // List<ExamSchedule>
     extension(List<ExamSchedule> scheduleList)
     {
-        public Calendar ToCalendar(ICalConvertOptions context)
+        public Calendar ToCalendar(ICalConvertOptions opt)
         {
             Calendar result = new();
-            scheduleList.ForEach(schedule => result.Events.Add(schedule.ToCalendarEvent(context)));
+            scheduleList.ForEach(schedule => result.Events.Add(schedule.ToCalendarEvent(opt)));
             return result;
         }
 
-        public string? ToCalendarString(ICalConvertOptions context) =>
-            new CalendarSerializer().SerializeToString(scheduleList.ToCalendar(context));
+        public string? ToCalendarString(ICalConvertOptions opt) =>
+            new CalendarSerializer().SerializeToString(scheduleList.ToCalendar(opt));
 
-        public async Task WriteAsICS(string path, ICalConvertOptions context) =>
-            await File.WriteAllTextAsync(path, scheduleList.ToCalendarString(context));
+        public async Task WriteAsICS(string path, ICalConvertOptions opt) =>
+            await File.WriteAllTextAsync(path, scheduleList.ToCalendarString(opt));
 
         /// <summary>
         /// 导出为 xlsx 文件

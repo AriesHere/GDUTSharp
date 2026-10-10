@@ -64,6 +64,11 @@ public class Term
 
     public static bool TryParse(string value, out Term term)
     {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            term = new();
+            return false;
+        }
         try
         {
             term = new(value);

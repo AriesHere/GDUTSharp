@@ -54,22 +54,28 @@ AppHost.Start();
 LoginInfo testLoginInfo = new() { UserName = "", Password = "" };
 var logger = AppHost.Services.GetRequiredService<ILogger<Program>>();
 var jxfw = AppHost.Services.GetRequiredService<IJXFWService>();
-var cookies = new CookieContainer();    // 通过 CookieContainer 隔离多个用户
+var cookies = new CookieContainer();
 var r = await jxfw.Login(cookies, testLoginInfo); // 自行处理登录失败时的情况
 logger.LogCritical("登录结果:{Result}", r);
 var term = jxfw.GetTerm(cookies).Result;    // 获取学期
 if (term is not null && await jxfw.GetLessons(cookies, term) is List<Lesson> lessons)
 {
     // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入其它日历程序中
-    await File.WriteAllTextAsync("path/to/file",
-        lessons.ToCalendarString(new GDUTSharp.Extra.Types.ICalConvertOptions()
-            {
-                Alarm = new()
-                {
-                    Trigger = new(new Duration(minutes: -30)),
-                    Action = AlarmAction.Display,
-                },
-                IsMergeIfContinuous = true,
-            }));
+    var opt = new ICalConvertOptions()
+    {
+        Alarm = new()
+        {
+            Trigger = new(new Duration(minutes: -20)),
+            Action = AlarmAction.Display,
+        },
+        IsMergeIfContinuous = true,
+    };
+    // 为早八设置特殊提醒（会覆盖上文的 alarm），返回 null 则不设置提醒
+    opt.SetAlarmFunc += (lesson) => lesson.Sessions.Any(i => i == 1) ? null : new()
+    {
+        Trigger = new(new Duration(minutes: -40)),
+        Action = AlarmAction.Display,
+    };
+    await File.WriteAllTextAsync("path/to/file", lessons.ToCalendarString(opt));
 }
 ```
