@@ -17,7 +17,7 @@ public static class Extensions
     extension(Lesson lesson)
     {
         /// <remaeks>部分信息不会写入（如学生人数、学期、班级名称）</remaeks>
-        public List<CalendarEvent> ToCalendarEvent(ICalConvertOptions opt)
+        public List<CalendarEvent> ToCalendarEvent(ICalConvertOptions<Lesson> opt)
         {
             List<CalendarEvent> result = [];
             List<(TimeOnly, TimeOnly)> temp = [];
@@ -74,17 +74,17 @@ public static class Extensions
     // List<Lesson>
     extension(List<Lesson> lessonList)
     {
-        public Calendar ToCalendar(ICalConvertOptions opt)
+        public Calendar ToCalendar(ICalConvertOptions<Lesson> opt)
         {
             Calendar result = new();
             lessonList.ForEach(l => l.ToCalendarEvent(opt).ForEach(result.Events.Add));
             return result;
         }
 
-        public string? ToCalendarString(ICalConvertOptions opt) =>
+        public string? ToCalendarString(ICalConvertOptions<Lesson> opt) =>
             new CalendarSerializer().SerializeToString(lessonList.ToCalendar(opt));
 
-        public async Task WriteAsICS(string path, ICalConvertOptions opt) =>
+        public async Task WriteAsICS(string path, ICalConvertOptions<Lesson> opt) =>
             await File.WriteAllTextAsync(path, lessonList.ToCalendarString(opt));
 
         /// <summary>
@@ -219,7 +219,7 @@ public static class Extensions
     // ExamSchedule
     extension(ExamSchedule schedule)
     {
-        public CalendarEvent ToCalendarEvent(ICalConvertOptions opt)
+        public CalendarEvent ToCalendarEvent(ICalConvertOptions<ExamSchedule> opt)
         {
             DateTime dtStart = schedule.Date.ToDateTime(schedule.StartTime);
             DateTime dtEnd = schedule.Date.ToDateTime(schedule.EndTime);
@@ -240,9 +240,9 @@ public static class Extensions
                 Start = new(dtStart),
                 End = new(dtEnd),
             };
-            if (opt.Alarm is not null)
+            if (opt.SetAlarm(schedule) is { } alarm)
             {
-                c.Alarms.Add(opt.Alarm);
+                c.Alarms.Add(alarm);
             }
             return c;
         }
@@ -251,17 +251,17 @@ public static class Extensions
     // List<ExamSchedule>
     extension(List<ExamSchedule> scheduleList)
     {
-        public Calendar ToCalendar(ICalConvertOptions opt)
+        public Calendar ToCalendar(ICalConvertOptions<ExamSchedule> opt)
         {
             Calendar result = new();
             scheduleList.ForEach(schedule => result.Events.Add(schedule.ToCalendarEvent(opt)));
             return result;
         }
 
-        public string? ToCalendarString(ICalConvertOptions opt) =>
+        public string? ToCalendarString(ICalConvertOptions<ExamSchedule> opt) =>
             new CalendarSerializer().SerializeToString(scheduleList.ToCalendar(opt));
 
-        public async Task WriteAsICS(string path, ICalConvertOptions opt) =>
+        public async Task WriteAsICS(string path, ICalConvertOptions<ExamSchedule> opt) =>
             await File.WriteAllTextAsync(path, scheduleList.ToCalendarString(opt));
 
         /// <summary>

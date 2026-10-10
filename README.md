@@ -58,10 +58,10 @@ var cookies = new CookieContainer();
 var r = await jxfw.Login(cookies, testLoginInfo); // 自行处理登录失败时的情况
 logger.LogCritical("登录结果:{Result}", r);
 var term = jxfw.GetTerm(cookies).Result;    // 获取学期
-if (term is not null && await jxfw.GetLessons(cookies, term) is List<Lesson> lessons)
+if (term is not null && await jxfw.GetLessons(cookies, term) is { } lessons)
 {
     // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入其它日历程序中
-    var opt = new ICalConvertOptions()
+    var opt = new ICalConvertOptions<Lesson>()
     {
         Alarm = new()
         {

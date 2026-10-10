@@ -1,5 +1,4 @@
-﻿using GDUTSharp.Interfaces;
-using GDUTSharp.Shared.Type;
+﻿using GDUTSharp.Shared.Type;
 
 namespace GDUTSharp;
 

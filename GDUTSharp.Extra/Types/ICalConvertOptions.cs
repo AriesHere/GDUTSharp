@@ -3,7 +3,7 @@ using Ical.Net.CalendarComponents;
 
 namespace GDUTSharp.Extra.Types;
 
-public class ICalConvertOptions
+public sealed class ICalConvertOptions<T>
 {
     public SessionCollection Sessions = SessionCollection.Default;
 
@@ -17,18 +17,12 @@ public class ICalConvertOptions
     public List<string> Categories = [];
 
     /// <summary>
-    /// 通过输入 Lesson 设置提醒，如果返回 null，则使用默认提醒（即 <see cref="Alarm"/>）
+    /// 通过传入的类来设置提醒，如果返回 null，则使用默认提醒（即 <see cref="Alarm"/>）
     /// </summary>
-    /// <remarks>
-    /// 仅对 <see cref="Lesson"/> 有效，其它类型只使用默认提醒（即 <see cref="Alarm"/>）
-    /// </remarks>
-    public event Func<Lesson, Alarm?>? SetAlarmFunc;
+    public event Func<T, Alarm?>? SetAlarmFunc;
 
     /// <summary>默认提醒</summary>
     public Alarm? Alarm = null;
 
-    /// <remarks>
-    /// 仅对 <see cref="Lesson"/> 有效，其它类型只使用默认提醒（即 <see cref="Alarm"/>）
-    /// </remarks>
-    public Alarm? SetAlarm(Lesson lesson) => SetAlarmFunc?.Invoke(lesson) ?? Alarm;
+    public Alarm? SetAlarm(T source) => SetAlarmFunc?.Invoke(source) ?? Alarm;
 }
