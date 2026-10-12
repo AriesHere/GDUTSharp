@@ -24,5 +24,17 @@ public sealed class ICalConvertOptions<T>
     /// <summary>默认提醒</summary>
     public Alarm? Alarm = null;
 
-    public Alarm? SetAlarm(T source) => SetAlarmFunc?.Invoke(source) ?? Alarm;
+    /// <remarks>仅在转换时调用</remarks>
+    public Alarm? GetAlarm(T source)
+    {
+        var result = Alarm;
+        if (SetAlarmFunc is not null)
+        {
+            foreach (var item in SetAlarmFunc.GetInvocationList())
+            {
+                result = (item as Func<T, Alarm?>)?.Invoke(source) ?? result;
+            }
+        }
+        return result;
+    }
 }

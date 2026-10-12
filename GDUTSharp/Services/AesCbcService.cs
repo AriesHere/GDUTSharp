@@ -5,13 +5,11 @@ using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services
 {
-    public partial class SecurityService(ILogger<SecurityService> logger) : ISecurityService
+    public partial class AesCbcService(ILogger<AesCbcService> logger) : ISecurityService
     {
-        private readonly ILogger<SecurityService> _logger = logger;
+        private readonly ILogger<AesCbcService> _logger = logger;
 
-        public virtual byte[] GenIV() => RandomNumberGenerator.GetBytes(ISecurityService.IV_LEN);
-
-        public virtual byte[] AesCbcEncrypt(byte[] plaintext, byte[] key, byte[] iv)
+        public virtual byte[] Encrypt(byte[] plaintext, byte[] key, byte[] iv)
         {
             try
             {
@@ -30,7 +28,7 @@ namespace GDUTSharp.Services
             }
         }
 
-        public virtual byte[] AesCbcDecrypt(byte[] cipherText, byte[] key, byte[] iv)
+        public virtual byte[] Decrypt(byte[] cipherText, byte[] key, byte[] iv)
         {
             try
             {

@@ -3,11 +3,15 @@ using GDUTSharp.Shared.Type;
 
 namespace GDUTSharp.Interfaces;
 
-/// <summary>
-/// 统一认证中心认证服务接口
-/// </summary>
+/// <summary>统一认证中心认证服务接口</summary>
 /// <remarks>
 /// 仅支持统一认证中心认证的系统可以使用本接口进行认证。
+/// <para>
+/// 登录方式：<br/>
+/// 先调用 <see cref="CheckNeedCaptcha"/> 检查是否需要验证码，如果需要，则调用 <see cref="GetCaptcha"/> 获取验证码，
+/// 然后调用 <see cref="SubmitCaptcha"/> 提交验证码并检查是否验证通过。验证通过后，再调用 <see cref="LoginAndAuth"/>
+/// 进行登录和认证。
+/// </para>
 /// </remarks>
 public interface IAuthService
 {
@@ -21,7 +25,7 @@ public interface IAuthService
     /// </remarks>
     public Task<HttpResponseMessage?> LoginAndAuth(
         CookieContainer cookies,
-        SupportedServices? service = null,
+        AuthServices? service = null,
         LoginInfo ? loginInfo = null,
         CancellationToken token = default);
 
@@ -40,18 +44,5 @@ public interface IAuthService
     public Task<AuthServerCaptcha?> GetCaptcha(CookieContainer cookies, CancellationToken token = default);
 
     /// <summary>向统一认证中心服务提交验证码并检查是否验证通过</summary>
-    /// <remarks>
-    /// <b>TODO：尚未验证此方法的有效性</b>
-    /// </remarks>
-    public Task<bool> SubmitCaptcha(
-        CookieContainer cookies,
-        SliderPayloadDto payload,
-        AuthServerCaptcha captcha,
-        CancellationToken token = default);
-
-    public enum SupportedServices
-    {
-        JXFW,       // 教学服务系统
-        LIBRARY,    // 图书馆
-    }
+    public Task<bool> SubmitCaptcha(CookieContainer cookies, SliderPayloadDto payload, byte[] safeSecure, CancellationToken token = default);
 }

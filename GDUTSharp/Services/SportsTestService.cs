@@ -12,12 +12,13 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
     protected ILogger<SportsTestService> _logger = logger;
     protected ICommonClient _client = client;
     protected ISecurityService _security = security;
+    protected const int IvLength = 16;
 
     public virtual async Task<byte[]?> GetCaptcha(CookieContainer cookies, CancellationToken token = default)
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SPORTS_TEST_CAPTCHA);
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SportsTestGetCaptcha);
             using var response = await _client.SendAsync(cookies, request, token);
             return await response.Content.ReadAsByteArrayAsync(token);
         }
@@ -32,7 +33,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SPORTS_TEST_PERSONAL);
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SportsTestPersonal);
             using var response = await _client.SendAsync(cookies, request, token);
             if (response.StatusCode is HttpStatusCode.Found)
             {
@@ -66,24 +67,17 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         HttpResponseMessage? response = null;
         try
         {
-            request = new(HttpMethod.Get, GSConst.SPORTS_TEST_PERSONAL);
+            request = new(HttpMethod.Get, GSConst.SportsTestPersonal);
             response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
-            var status = response.StatusCode;
-            var location = response.Headers.Location;
-            response.Dispose();
-            if (status is HttpStatusCode.OK)
+            var rq = response.RequestMessage;
+            if (rq!.RequestUri!.AbsoluteUri is GSConst.SportsTestPersonal)
             {
                 return true;
             }
-            // 如果需要登录， status 应为 302 Found, location 应该不是 null
-            // TODO: 由于使用了自动重定向，可能会导致 location 为 null
-            request = new(HttpMethod.Get, location);
-            response = await _client.SendAsync(cookies, request, token);
-            request.Dispose();
+
             var content = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
-
             var viewState = content.Extract("id=\"__VIEWSTATE\" value=\"", '"', out var cur);
             var viewStateGenerator = content.Extract("id=\"__VIEWSTATEGENERATOR\" value=\"", '"', out cur, cur);
             var btnSubmit = content.Extract("name=\"BtnSubmit\" value=\"", '"', out cur, cur);
@@ -102,14 +96,14 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
             var hidReferUrl = content.Extract("id=\"hidReferUrl\" value=\"", '"', out cur, cur);
 
             byte[] key = SHA256.HashData(hidSchoolNo.ToBytes())[0..16];
-            byte[] iv = hidCode.ToBytes()[..ISecurityService.IV_LEN];
+            byte[] iv = hidCode.ToBytes()[..IvLength];
             var requestContent = new Dictionary<string, string>
             {
                 // 疑似缺一不可
                 { "__VIEWSTATE", viewState },
                 { "__VIEWSTATEGENERATOR", viewStateGenerator },
                 { "username", loginInfo.UserName },
-                { "password", Convert.ToBase64String(_security.AesCbcEncrypt(loginInfo.Password.ToBytes(), key, iv)) },
+                { "password", Convert.ToBase64String(_security.Encrypt(loginInfo.Password.ToBytes(), key, iv)) },
                 { "vercode", loginInfo.Captcha },
                 { "drpRole", "2" },
                 { "BtnSubmit", btnSubmit },
@@ -128,7 +122,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
                 { "hidModelWeixin", hidModelWeixin },
                 { "hidReferUrl", hidReferUrl },
             };
-            request = ICommonClient.CreateRequest(HttpMethod.Post, location!.AbsoluteUri, requestContent);
+            request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.SportsTestLogin, requestContent);
             response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
             var r = await response.Content.ReadAsStringAsync(token);
@@ -150,7 +144,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SPORTS_TEST_SCORE + year);
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SportsTestScore + year);
             using var response = await _client.SendAsync(cookies, request, token);
             var html = await response.Content.ReadAsStringAsync(token);
             var cur = html.IndexOf("未查询到该学生ID");

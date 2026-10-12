@@ -31,6 +31,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\NoticeDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\SemesterRegDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\TeachingPlanDto.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Type\Enums.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\ExamSchedule.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\GradingExamScore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\Lesson.cs" />

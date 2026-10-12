@@ -3,9 +3,12 @@ using GDUTSharp.Shared.Type;
 
 namespace GDUTSharp.Interfaces;
 
-/// <summary>
-/// 图书馆
-/// </summary>
+/// <summary>图书馆</summary>
+/// <remarks>
+/// 登录方式：调用 <see cref="Login"/> 通过统一认证中心登录，如果触发验证码验证，则必定登录失败，返回 false。
+/// 此时需要通过 <see cref="IAuthService.SubmitCaptcha"/> 进行验证码验证后再调用 <see cref="Login"/>，
+/// 详见 <see cref="IAuthService"/> 的文档。
+/// </remarks>
 public interface ILibraryService
 {
     /// <summary>登录</summary>

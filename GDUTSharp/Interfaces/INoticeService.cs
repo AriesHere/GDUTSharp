@@ -4,11 +4,9 @@ using GDUTSharp.Shared.Type;
 
 namespace GDUTSharp.Interfaces;
 
-/// <summary>
-/// 通知简讯网
-/// </summary>
+/// <summary>通知简讯网</summary>
 /// <remarks>
-/// 首次使用时需要先调用 <see cref="Preprocess"/> 才能再调用其它的
+/// 首次使用时需要先调用 <see cref="Preprocess"/> 获取各分类的 id，之后再调用 <see cref="GetNoticeCollection"/> 获取对应分类的通知列表
 /// </remarks>
 public interface INoticeService
 {

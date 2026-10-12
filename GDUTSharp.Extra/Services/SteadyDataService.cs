@@ -12,14 +12,14 @@ namespace GDUTSharp.Extra.Services;
 /// 基于 HtmlAgilityPack 实现的更稳健的 AuthService
 /// </summary>
 /// <remarks>
-/// 重写了 <see cref="LoginAndAuth(IAuthService.SupportedServices?, LoginInfo?)"/> 方法以避免由激进的优化导致的错误
+/// 重写了 <see cref="LoginAndAuth"/> 方法以减少由激进的优化导致的错误
 /// </remarks>
 public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient client, ISecurityService security)
     : AuthService(logger, client, security)
 {
     public async override Task<HttpResponseMessage?> LoginAndAuth(
         CookieContainer cookies,
-        IAuthService.SupportedServices? service = null,
+        AuthServices? service = null,
         LoginInfo? loginInfo = null,
         CancellationToken token = default)
     {
@@ -27,9 +27,9 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
         {
             var url = service switch
             {
-                IAuthService.SupportedServices.JXFW => GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
-                IAuthService.SupportedServices.LIBRARY => GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.LIBRARY_LOGIN,
-                _ => GSConst.AUTHSERVER_LOGIN,
+                AuthServices.AcademicAffairs => GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
+                AuthServices.Library => GSConst.AuthServerAuth + GSConst.LibraryLogin,
+                _ => GSConst.AuthServerLogin,
             };
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
             HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
@@ -67,13 +67,13 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
 
                     formData["username"] = loginInfo.UserName;
                     formData["password"] = Convert.ToBase64String(
-                        _security.AesCbcEncrypt(base.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
+                        _security.Encrypt(base.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
 
                     using var request2 = ICommonClient.CreateRequest(
                         HttpMethod.Post,
-                        GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
+                        GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
                         formData,
-                        GSConst.UNDER_GRADUATE_LOGIN);
+                        GSConst.AcademicAffairsUnderLogin);
                     response = await _client.SendAsync(cookies, request2, token);
                 }
             }

@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using GDUTSharp.Services;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Type;
 using GDUTSharp.Test.TestServers;
 
 namespace GDUTSharp.Test
@@ -17,23 +18,23 @@ namespace GDUTSharp.Test
         [DataRow("""
             <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'><head><style type='text/css'>td { mso-number-format: '@'; }</style><meta http-equiv="content-type" content="text/html; charset=UTF-8" /></head><body><table style='mso-number-format:\@;'><tr><th rowspan='1' colspan='1' field='kcmc' style='background-color:#D3D3D3;font-weight:bold;'>课程名称</th><th rowspan='1' colspan='1' field='jxbmc' style='background-color:#D3D3D3;font-weight:bold;'>班级名称</th><th rowspan='1' colspan='1' field='pkrs' style='background-color:#D3D3D3;font-weight:bold;'>人数</th><th rowspan='1' colspan='1' field='teaxms' style='background-color:#D3D3D3;font-weight:bold;'>教师</th><th rowspan='1' colspan='1' field='zc' style='background-color:#D3D3D3;font-weight:bold;'>周次</th><th rowspan='1' colspan='1' field='xq' style='background-color:#D3D3D3;font-weight:bold;'>星期</th><th rowspan='1' colspan='1' field='jcdm' style='background-color:#D3D3D3;font-weight:bold;'>节次</th><th rowspan='1' colspan='1' field='jxcdmc' style='background-color:#D3D3D3;font-weight:bold;'>上课地点</th><th rowspan='1' colspan='1' field='pkrq' style='background-color:#D3D3D3;font-weight:bold;'>排课日期</th><th rowspan='1' colspan='1' field='kxh' style='background-color:#D3D3D3;font-weight:bold;'>课序</th><th rowspan='1' colspan='1' field='jxhjmc' style='background-color:#D3D3D3;font-weight:bold;'>类型</th><th rowspan='1' colspan='1' field='sknrjj' style='background-color:#D3D3D3;font-weight:bold;'>授课内容简介</th></tr><tr><td>劳动教育</td><td>某某班级(1),某某班级(2)</td><td>60</td><td>某某老师</td><td>1</td><td>4</td><td x:str="08">08</td><td>某上课地点</td><td>2026-09-07</td><td>1</td><td>实验教学</td><td>测试简介</td></tr><tr><td>大学美育(1)</td><td>某某班级(1),某某班级(2),某某班级(3),某某班级(4)</td><td>98</td><td>某某老师</td><td>1</td><td>1</td><td x:str="101112">101112</td><td>某上课地点</td><td>2026-09-07</td><td>1</td><td>理论教学</td><td>简介内容</td></tr></table></body></html>
             """)]
-        public void TestJXFWExportedLessonsFileAnalysis(string input)
+        public void TestLessonsFileTypeAnalysis(string input)
         {
             MemoryStream s = new(input.ToBytes());
-            var r = Extra.Extensions.Read(s, Extra.Extensions.JXFWFileType.AutoDetect);
+            var r = Extra.Extensions.Read(s, LessonsFileType.AutoDetect);
             Assert.HasCount(2, r);
         }
 
         [TestMethod]
         public void TestEncrypt()
         {
-            SecurityService s = new(new TestLogger<SecurityService>());
+            AesCbcService s = new(new TestLogger<AesCbcService>());
             byte[] raw = "System.Security.Cryptography.CryptographicAException: Specified key is not a valid size for this algorithm.".ToBytes();
             var key = RandomNumberGenerator.GetBytes(32);
-            var iv = s.GenIV();
-            var cipherText = s.AesCbcEncrypt(raw, key, iv);
-            var result = s.AesCbcDecrypt(cipherText, key, iv);
-            Assert.AreEqual(raw.GetString(), result.GetString());
+            var iv = RandomNumberGenerator.GetBytes(16);
+            var cipherText = s.Encrypt(raw, key, iv);
+            var result = s.Decrypt(cipherText, key, iv);
+            CollectionAssert.AreEqual(raw, result);
         }
     }
 }

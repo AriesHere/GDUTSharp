@@ -4,6 +4,10 @@ using GDUTSharp.Shared.Type;
 namespace GDUTSharp.Interfaces;
 
 /// <summary>体质测试系统</summary>
+/// <remarks>
+/// 登录方式：先调用 <see cref="GetCaptcha"/> 获取验证码，将学号、密码和验证码
+/// 填入 <see cref="LoginInfo.Captcha"/> 后调用 <see cref="Login"/>
+/// </remarks>
 public interface ISportsTestService
 {
     /// <returns>GIF89a 格式</returns>

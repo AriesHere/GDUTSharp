@@ -9,6 +9,9 @@ public static partial class Helper
     {
         public byte[] ToBytes() => Encoding.UTF8.GetBytes(s);
 
+        /// <summary>
+        /// 从字符串中提取 <paramref name="start"/> 和 <paramref name="end"/> 之间的内容，并返回 <paramref name="end"/> 的索引
+        /// </summary>
         public string Extract(string start, string end, out int currentIndex, int startIndex = 0)
         {
             var index = s.IndexOf(start, startIndex) + start.Length;
@@ -17,6 +20,7 @@ public static partial class Helper
             return s[index..endIndex];
         }
 
+        /// <summary>同 <see cref="extension(string).Extract(string, string, out int, int)"/></summary>
         public string Extract(string start, char end, out int currentIndex, int startIndex = 0)
         {
             var index = s.IndexOf(start, startIndex) + start.Length;
@@ -25,8 +29,6 @@ public static partial class Helper
             return s[index..endIndex];
         }
     }
-
-    public static string GetString(this byte[] b) => Encoding.UTF8.GetString(b);
 
     public static Dictionary<TKey, TValue> AddIfNotExist<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
     {

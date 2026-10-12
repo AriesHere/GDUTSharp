@@ -25,7 +25,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
         HttpResponseMessage? response = null;
         try
         {
-            response = await _authService.LoginAndAuth(cookies, IAuthService.SupportedServices.LIBRARY, loginInfo, token);
+            response = await _authService.LoginAndAuth(cookies, AuthServices.Library, loginInfo, token);
             if (response is null) return (false, null);
 
             using var reader = new StreamReader(response.Content.ReadAsStream(token));
@@ -40,7 +40,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
             response.Dispose();
             string refValue = WebUtility.HtmlDecode(r.Extract("value=\"", '"', out _));
             request = new(HttpMethod.Get, refValue);
-            request.Headers.Referrer = new(GSConst.LIBRARY_LOGIN);
+            request.Headers.Referrer = new(GSConst.LibraryLogin);
             response = await _client.SendAsync(cookies, request, token);
             request.Dispose();
 
@@ -86,7 +86,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
                     "endDate": null
                 }
                 """;
-            using var request = new HttpRequestMessage(HttpMethod.Post, GSConst.LIBRARY_LOAN_LIST)
+            using var request = new HttpRequestMessage(HttpMethod.Post, GSConst.LibraryLoanList)
             {
                 Content = new StringContent(requestContent, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
             };
@@ -105,8 +105,8 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.LIBRARY_DAILY_RECOMMEND);
-            request.Headers.Referrer = new(GSConst.LIBRARY_DAILY_RECOMMEND);
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.LibraryDalyRecommend);
+            request.Headers.Referrer = new(GSConst.LibraryDalyRecommend);
             if (jwtOpacAuth is not null) request.Headers.Add("jwtOpacAuth", jwtOpacAuth);
             using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
             var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.DailyRecommandDtoCollection, token);

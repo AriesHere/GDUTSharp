@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization.Metadata;
 using GDUTSharp.Interfaces;
@@ -9,11 +10,10 @@ using GDUTSharp.Shared.Type;
 using GDUTSharp.Shared.Type.DTO;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using static GDUTSharp.Interfaces.IJXFWService;
 
 namespace GDUTSharp.Services;
 
-public class JXFWServiceOptions
+public class AcademicAffairsServiceOptions
 {
     /// <summary>每次请求时请求的数据条目数</summary>
     public int ItemPerRequest { get; set; } = 300;
@@ -22,20 +22,24 @@ public class JXFWServiceOptions
     public int MaxPage { get; set; } = 10;
 }
 
-public class JXFWService(
-    IOptions<JXFWServiceOptions> options,
-    ILogger<JXFWService> logger,
+/// <summary>
+/// 教学服务系统
+/// </summary>
+public class AcademicAffairsService(
+    IOptions<AcademicAffairsServiceOptions> options,
+    ILogger<AcademicAffairsService> logger,
     ICommonClient client,
     IAuthService authService,
     ISecurityService security)
-    : IJXFWService
+    : IAcademicAffairsService
 {
-    protected readonly ILogger<JXFWService> _logger = logger;
+    protected readonly ILogger<AcademicAffairsService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
     protected readonly ISecurityService _security = security;
     protected readonly int _maxPage = options.Value.MaxPage;
     protected readonly int _itemPerRequest = options.Value.ItemPerRequest;
+    protected const int IvLength = 16;
 
     protected virtual async Task<List<TResult>?> GetData<TResult, TDto, TDtoCollection>(
         CookieContainer cookies,
@@ -74,7 +78,7 @@ public class JXFWService(
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.UNDER_CAPTCHA + DateTimeOffset.Now.ToUnixTimeMilliseconds());
+            using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.AcademicAffairsUnderCaptcha + DateTimeOffset.Now.ToUnixTimeMilliseconds());
             using var response = await _client.SendAsync(cookies, request, token);
             return await response.Content.ReadAsByteArrayAsync(token);
         }
@@ -86,7 +90,7 @@ public class JXFWService(
     }
 
     /// <remarks>
-    /// TODO: 尚未验证 <paramref name="loginType"/> 为 <see cref="LoginType.JXFW"/> 时能否正常登录
+    /// TODO: 尚未验证 <paramref name="loginType"/> 为 <see cref="LoginType.Self"/> 时能否正常登录
     /// </remarks>
     public virtual async Task<bool> Login(
         CookieContainer cookies,
@@ -102,15 +106,15 @@ public class JXFWService(
             {
                 case LoginType.AuthServer:
                     {
-                        response = await _authService.LoginAndAuth(cookies, IAuthService.SupportedServices.JXFW, loginInfo, token);
+                        response = await _authService.LoginAndAuth(cookies, AuthServices.AcademicAffairs, loginInfo, token);
                         if (response is null) return false;
                         using var reader = new StreamReader(response.Content.ReadAsStream(token));
                         reader.ReadLine();  // skip
                         return reader.ReadLine()?.StartsWith("<!-- 移动端 -->") == false;
                     }
-                case LoginType.JXFW:
+                case LoginType.Self:
                     {
-                        request = new(HttpMethod.Get, GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN);
+                        request = new(HttpMethod.Get, GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin);
                         response = await _client.SendAsync(cookies, request, token);
                         request.Dispose();
                         if (response.StatusCode == HttpStatusCode.OK)   // 需要登录
@@ -134,10 +138,12 @@ public class JXFWService(
                             var content = new Dictionary<string, string>
                             {
                                 { "account", loginInfo.UserName },
-                                { "pwd", Convert.ToHexString(_security.AesCbcEncrypt(loginInfo.Password.ToBytes(), sb.ToString().ToBytes(), _security.GenIV())) },
+                                { "pwd", Convert.ToHexString(
+                                    _security.Encrypt(loginInfo.Password.ToBytes(), sb.ToString().ToBytes(), RandomNumberGenerator.GetBytes(IvLength))) },
                                 { "verifycode", loginInfo.Captcha },
                             };
-                            request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_LOGIN, content, GSConst.UNDER_LOGIN);
+                            request = ICommonClient.CreateRequest(
+                                HttpMethod.Post, GSConst.AcademicAffairsUnderSelfLogin, content, GSConst.AcademicAffairsUnderSelfLogin);
                             response = await _client.SendAsync(cookies, request, token);
                             request.Dispose();
                             return !(await response.Content.ReadAsStringAsync(token)).StartsWith("{\"code\":-");
@@ -164,7 +170,8 @@ public class JXFWService(
     {
         try
         {
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_TERM, referer: GSConst.UNDER_TERM);
+            using var request = ICommonClient.CreateRequest(
+                HttpMethod.Post, GSConst.AcademicAffairsUnderTerm, referer: GSConst.AcademicAffairsUnderTerm);
             using var response = await _client.SendAsync(cookies, request, token);
             string responseContent = await response.Content.ReadAsStringAsync(token);
             int index = responseContent.IndexOf("selected");
@@ -185,7 +192,7 @@ public class JXFWService(
         {
             return await GetData<Lesson, LessonDto, LessonDtoCollection>(
                 cookies,
-                GSConst.UNDER_LESSONS,
+                GSConst.AcademicAffairsUnderLessons,
                 new Dictionary<string, string>
                 {
                     { "xnxqdm", $"{term.Code6}" },
@@ -208,7 +215,7 @@ public class JXFWService(
         {
             return await GetData<ExamSchedule, ExamScheduleDto, ExamScheduleDtoCollection>(
                 cookies,
-                GSConst.UNDER_EXAM_SCHEDULE,
+                GSConst.AcademicAffairsUnderExamSchedule,
                 new Dictionary<string, string>
                 {
                     { "xnxqdm", $"{term.Code6}" },
@@ -236,7 +243,7 @@ public class JXFWService(
                 };
             var result = await GetData<CourseScore, CourseScoreDto, CourseScoreDtoCollection>(
                 cookies,
-                GSConst.UNDER_COURSE_SCORE,
+                GSConst.AcademicAffairsUnderCourseScore,
                 requestContent,
                 AppJsonContext.Context.CourseScoreDtoCollection,
                 token);
@@ -250,7 +257,7 @@ public class JXFWService(
                     requestContent["xnxqdm"] = item;
                     var tempResult = await GetData<CourseScore, CourseScoreDto, CourseScoreDtoCollection>(
                         cookies,
-                        GSConst.UNDER_COURSE_SCORE,
+                        GSConst.AcademicAffairsUnderCourseScore,
                         requestContent,
                         AppJsonContext.Context.CourseScoreDtoCollection,
                         token);
@@ -283,7 +290,7 @@ public class JXFWService(
         {
             return await GetData<CourseSel, CourseSelDto, CourseSelDtoCollection>(
                 cookies,
-                GSConst.UNDER_COURSE_SEL,
+                GSConst.AcademicAffairsUnderCourseSel,
                 new Dictionary<string, string> { { "sort", "kcflmc" } },
                 AppJsonContext.Context.CourseSelDtoCollection,
                 token);
@@ -301,7 +308,7 @@ public class JXFWService(
         {
             return await GetData<CourseSel, CourseSelDto, CourseSelDtoCollection>(
                 cookies,
-                GSConst.UNDER_COURSE_SEL_ED,
+                GSConst.AcademicAffairsUnderCourseSelected,
                 new Dictionary<string, string> { { "sort", "kcflmc" } },
                 AppJsonContext.Context.CourseSelDtoCollection,
                 token);
@@ -330,7 +337,8 @@ public class JXFWService(
             for (int i = 1; i <= _maxPage; i++)
             {
                 content["page"] = $"{i}";
-                using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.UNDER_COURSE_TASK, content, GSConst.UNDER_COURSE_TASK);
+                using var request = ICommonClient.CreateRequest(
+                    HttpMethod.Post, GSConst.AcademicAffairsUnderCourseTask, content, GSConst.AcademicAffairsUnderCourseTask);
                 using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
                 var temp = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLessonDto, token);
                 List<Lesson>? tempResult = temp is null ? null : [..temp];
@@ -362,7 +370,7 @@ public class JXFWService(
         {
             return await GetData<GradingExamScore, GradingExamScoreDto, GradingExamScoreDtoCollection>(
                 cookies,
-                GSConst.UNDER_GRADING_EXAM_SCORE,
+                GSConst.AcademicAffairsUnderGradingExamScore,
                 new Dictionary<string, string> { { "sort", "xnxqdm,kssj" } },
                 AppJsonContext.Context.GradingExamScoreDtoCollection,
                 token);
@@ -380,7 +388,7 @@ public class JXFWService(
         {
             return await GetData<AvaliableTeachingPlan, AvaliableTeachingPlanDto, AvaliableTeachingPlanDtoCollection>(
                 cookies,
-                GSConst.UNDER_TEACHING_PLAN_AVALIABLE,
+                GSConst.AcademicAffairsUnderAvailableTeachingPlan,
                 new Dictionary<string, string>{ { "sort", "nd" } },
                 AppJsonContext.Context.AvaliableTeachingPlanDtoCollection,
                 token);
@@ -398,7 +406,7 @@ public class JXFWService(
         {
             return await GetData<TeachingPlan, TeachingPlanDto, TeachingPlanDtoCollection>(
                 cookies,
-                GSConst.UNDER_TEACHING_PLAN_AVALIABLE,
+                GSConst.AcademicAffairsUnderAvailableTeachingPlan,
                 new Dictionary<string, string> { { "sort", "kkxqmc1" } },
                 AppJsonContext.Context.TeachingPlanDtoCollection,
                 token);
@@ -416,7 +424,7 @@ public class JXFWService(
         {
             return await GetData<SemesterReg, SemesterRegDto, SemesterRegDtoCollection>(
                 cookies,
-                GSConst.UNDER_SEMESTER_REG,
+                GSConst.AcademicAffairsUnderSemesterReg,
                 new Dictionary<string, string> { { "sort", "xnxqmc" } },
                 AppJsonContext.Context.SemesterRegDtoCollection,
                 token);

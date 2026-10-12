@@ -15,31 +15,31 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     protected readonly ILogger<AuthService> _logger = logger;
     protected readonly ICommonClient _client = client;
     protected readonly ISecurityService _security = security;
-    protected const int PREFIX_LEN = 64;
-    protected const string AES_CHARS = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
-    protected const string GET_SALT = "id=\"pwdEncryptSalt\" value=\"";
-    protected const string GET_EXEC = "name=\"execution\" value=\"";
+    protected const int PrefixLength = 64;
+    protected const int IvLength = 16;
+    /// <remarks>疑似只接受此字符集</remarks>
+    protected const string AesChars = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
 
     #region 加密
 
     protected static byte[] GenIV()
     {
-        var bytes = new byte[ISecurityService.IV_LEN];
-        for (int i = 0; i < ISecurityService.IV_LEN; i++)
+        var bytes = new byte[IvLength];
+        for (int i = 0; i < IvLength; i++)
         {
-            int index = RandomNumberGenerator.GetInt32(AES_CHARS.Length);
-            bytes[i] = (byte)AES_CHARS[index];
+            int index = RandomNumberGenerator.GetInt32(AesChars.Length);
+            bytes[i] = (byte)AesChars[index];
         }
         return bytes;
     }
 
     protected static byte[] GenPrefix()
     {
-        var bytes = new byte[PREFIX_LEN];
-        for (int i = 0; i < PREFIX_LEN; i++)
+        var bytes = new byte[PrefixLength];
+        for (int i = 0; i < PrefixLength; i++)
         {
-            int index = RandomNumberGenerator.GetInt32(AES_CHARS.Length);
-            bytes[i] = (byte)AES_CHARS[index];
+            int index = RandomNumberGenerator.GetInt32(AesChars.Length);
+            bytes[i] = (byte)AesChars[index];
         }
         return bytes;
     }
@@ -51,7 +51,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
 
     public virtual async Task<HttpResponseMessage?> LoginAndAuth(
         CookieContainer cookies,
-        IAuthService.SupportedServices? service = null,
+        AuthServices? service = null,
         LoginInfo ? loginInfo = null,
         CancellationToken token = default)
     {
@@ -60,9 +60,9 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         {
             var url = service switch
             {
-                IAuthService.SupportedServices.JXFW => GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
-                IAuthService.SupportedServices.LIBRARY => GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.LIBRARY_LOGIN,
-                _ => GSConst.AUTHSERVER_LOGIN,
+                AuthServices.AcademicAffairs => GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
+                AuthServices.Library => GSConst.AuthServerAuth + GSConst.LibraryLogin,
+                _ => GSConst.AuthServerLogin,
             };
             request = new HttpRequestMessage(HttpMethod.Post, url);
             HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
@@ -84,12 +84,12 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
 
                     // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这样，
                     // 请使用 GDUTSharp.Extra.SteadyAuthService 中的 LoginAndAuth 方法
-                    var pwdEncryptSalt = html.Extract(GET_SALT, '"', out var cur);
-                    var execution = html.Extract(GET_EXEC, '"', out _, cur);
+                    var pwdEncryptSalt = html.Extract("id=\"pwdEncryptSalt\" value=\"", '"', out var cur);
+                    var execution = html.Extract("name=\"execution\" value=\"", '"', out _, cur);
                     formData["username"] = loginInfo.UserName;
                     formData["password"] = Convert.ToBase64String(
-                        _security.AesCbcEncrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
-                    formData["captcha"] = "";   // TODO
+                        _security.Encrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
+                    formData["captcha"] = "";
                     formData["_eventId"] = "submit";
                     formData["cllt"] = "userNameLogin";
                     formData["dllt"] = "generalLogin";
@@ -98,9 +98,9 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
 
                     request = ICommonClient.CreateRequest(
                         HttpMethod.Post,
-                        GSConst.AUTHSERVER_AUTH_PREFIX + GSConst.UNDER_GRADUATE_LOGIN,
+                        GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
                         formData,
-                        GSConst.UNDER_GRADUATE_LOGIN);
+                        GSConst.AcademicAffairsUnderLogin);
                     response = await _client.SendAsync(cookies, request, token);
                 }
             }
@@ -123,7 +123,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     {
         try
         {
-            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_LOGOUT);
+            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AuthServerLogout);
             using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
             var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("注销成功");
@@ -139,7 +139,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     {
         try
         {
-            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_CHECK_CAPTCHA_PREFIX + username);
+            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AuthServerCheckCaptcha + username);
             using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
             var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("true");
@@ -155,11 +155,9 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     {
         try
         {
-            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AUTHSERVER_CAPTCHA_GET);
+            using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AuthServerGetCaptcha);
             using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
-            var r = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AuthServerCaptchaDto, token);
-            if (r is null) return null;
-            return r;
+            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AuthServerCaptcha, token);
         }
         catch (Exception e)
         {
@@ -171,15 +169,15 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
     public virtual async Task<bool> SubmitCaptcha(
         CookieContainer cookies,
         SliderPayloadDto payload,
-        AuthServerCaptcha captcha,
+        byte[] safeSecure,
         CancellationToken token = default)
     {
         try
         {
             string json = JsonSerializer.Serialize(payload, AppJsonContext.Context.SliderPayloadDto);
-            string sign = Convert.ToBase64String(_security.AesCbcEncrypt(this.PrefixProcess(json), captcha.SmallImage.ToBytes()[^16..], _security.GenIV()));
+            string sign = Convert.ToBase64String(_security.Encrypt(this.PrefixProcess(json), safeSecure, RandomNumberGenerator.GetBytes(16)));
             var content = new Dictionary<string, string> { {"sign", sign} };
-            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.AUTHSERVER_CAPTCHA_VERIFY, content);
+            using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.AuthServerVerifyCaptcha, content);
             using var response = await _client.SendAsync(cookies, request, token);
             var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("success");

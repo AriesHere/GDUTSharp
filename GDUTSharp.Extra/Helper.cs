@@ -86,7 +86,7 @@ public static class Helper
 
     public static readonly List<WSDescOpt> WSDesc =
         [
-            new("Powered by GDUTSharp", GSConst.GDUTSHARP_REPO),
+            new("Powered by GDUTSharp", GSConst.GDUTSharpRepo),
             new("数据通过 GDUTSharp.Extra 从教学服务系统导出，一切以教学服务系统为准"),
         ];
 

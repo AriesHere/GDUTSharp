@@ -43,9 +43,9 @@ IHost AppHost = Host.CreateDefaultBuilder()
         services.AddSingleton<INoticeService, NoticeService>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<ILibraryService, LibraryService>();
-        services.AddSingleton<IJXFWService, JXFWService>();
+        services.AddSingleton<IAcademicAffairsService, AcademicAffairsService>();
         services.AddSingleton<ISportsTestService, SportsTestService>();
-        services.AddSingleton<ISecurityService, SecurityService>();
+        services.AddSingleton<ISecurityService, AesCbcService>();
         services.AddCommonClient(context.Configuration);
     })
     .Build();
@@ -53,8 +53,8 @@ AppHost.Start();
 
 LoginInfo testLoginInfo = new() { UserName = "", Password = "" };
 var logger = AppHost.Services.GetRequiredService<ILogger<Program>>();
-var jxfw = AppHost.Services.GetRequiredService<IJXFWService>();
 var cookies = new CookieContainer();
+var jxfw = AppHost.Services.GetRequiredService<IAcademicAffairsService>();
 var r = await jxfw.Login(cookies, testLoginInfo); // 自行处理登录失败时的情况
 logger.LogCritical("登录结果:{Result}", r);
 var term = jxfw.GetTerm(cookies).Result;    // 获取学期
@@ -70,7 +70,7 @@ if (term is not null && await jxfw.GetLessons(cookies, term) is { } lessons)
         },
         IsMergeIfContinuous = true,
     };
-    // 为早八设置特殊提醒（会覆盖上文的 alarm），返回 null 则不设置提醒
+    // 为早八设置特殊提醒（会覆盖上文的 alarm）
     opt.SetAlarmFunc += (lesson) => lesson.Sessions.Any(i => i == 1) ? null : new()
     {
         Trigger = new(new Duration(minutes: -40)),

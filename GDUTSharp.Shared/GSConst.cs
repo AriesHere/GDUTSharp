@@ -3,83 +3,85 @@
 public static class GSConst
 {
     /// <summary>本项目（GDUTSharp）的仓库地址</summary>
-    public const string GDUTSHARP_REPO = "https://github.com/AriesHere/GDUTSharp";
+    public const string GDUTSharpRepo = "https://github.com/AriesHere/GDUTSharp";
 
     #region 统一认证中心
 
-    public const string AUTHSERVER_LOGIN = "https://authserver.gdut.edu.cn/authserver/login?type=userNameLogin";
+    public const string AuthServerLogin = "https://authserver.gdut.edu.cn/authserver/login?type=userNameLogin";
 
-    public const string AUTHSERVER_AUTH_PREFIX = "https://authserver.gdut.edu.cn/authserver/login?service=";
+    /// <remarks>需要在末尾添加需要认证的服务地址</remarks>
+    public const string AuthServerAuth = "https://authserver.gdut.edu.cn/authserver/login?service=";
 
-    public const string AUTHSERVER_LOGOUT = "https://authserver.gdut.edu.cn/authserver/logout";
+    public const string AuthServerLogout = "https://authserver.gdut.edu.cn/authserver/logout";
 
     /// <remarks>需要在末尾添加学号</remarks>
-    public const string AUTHSERVER_CHECK_CAPTCHA_PREFIX = "https://authserver.gdut.edu.cn/authserver/checkNeedCaptcha.htl?username=";
+    public const string AuthServerCheckCaptcha = "https://authserver.gdut.edu.cn/authserver/checkNeedCaptcha.htl?username=";
 
-    public const string AUTHSERVER_CAPTCHA_GET = "https://authserver.gdut.edu.cn/authserver/common/openSliderCaptcha.htl";
+    public const string AuthServerGetCaptcha = "https://authserver.gdut.edu.cn/authserver/common/openSliderCaptcha.htl";
 
-    public const string AUTHSERVER_CAPTCHA_VERIFY = "https://authserver.gdut.edu.cn/authserver/common/verifySliderCaptcha.htl";
+    public const string AuthServerVerifyCaptcha = "https://authserver.gdut.edu.cn/authserver/common/verifySliderCaptcha.htl";
 
     #endregion
 
     #region 教学服务系统（本科生）
 
     /// <summary>本科生教务系统自有登录</summary>
-    public const string UNDER_LOGIN = "https://jxfw.gdut.edu.cn/new/login";
+    public const string AcademicAffairsUnderSelfLogin = "https://jxfw.gdut.edu.cn/new/login";
 
     /// <summary>本科生获取验证码（用于自有登录）</summary>
     /// <remarks>在末尾补充 Unix 毫秒时间戳</remarks>
-    public const string UNDER_CAPTCHA = "https://jxfw.gdut.edu.cn/yzm?d=";
+    public const string AcademicAffairsUnderCaptcha = "https://jxfw.gdut.edu.cn/yzm?d=";
 
     /// <summary>本科生获取学期代码</summary>
-    public const string UNDER_TERM = "https://jxfw.gdut.edu.cn/xsksap!ksapList.action";
+    public const string AcademicAffairsUnderTerm = "https://jxfw.gdut.edu.cn/xsksap!ksapList.action";
 
     /// <summary>本科生获取课程安排</summary>
-    public const string UNDER_LESSONS = "https://jxfw.gdut.edu.cn/xsgrkbcx!getDataList.action";
+    public const string AcademicAffairsUnderLessons = "https://jxfw.gdut.edu.cn/xsgrkbcx!getDataList.action";
 
     /// <summary>本科生获取考试安排</summary>
-    public const string UNDER_EXAM_SCHEDULE = "https://jxfw.gdut.edu.cn/xsksap!getDataList.action";
+    public const string AcademicAffairsUnderExamSchedule = "https://jxfw.gdut.edu.cn/xsksap!getDataList.action";
 
     /// <summary>本科生获取课程成绩</summary>
-    public const string UNDER_COURSE_SCORE = "https://jxfw.gdut.edu.cn/xskccjxx!getDataList.action";
+    public const string AcademicAffairsUnderCourseScore = "https://jxfw.gdut.edu.cn/xskccjxx!getDataList.action";
 
-    /// <summary>本科生教学服务系统登录链接</summary>
-    public const string UNDER_GRADUATE_LOGIN = "https://jxfw.gdut.edu.cn/new/ssoLogin";
+    /// <summary>本科生教学服务系统统一认证登录链接</summary>
+    /// <remarks>需要拼在 <see cref="AuthServerAuth"/> 末尾</remarks>
+    public const string AcademicAffairsUnderLogin = "https://jxfw.gdut.edu.cn/new/ssoLogin";
 
     /// <summary>本科生选课可选列表</summary>
-    public const string UNDER_COURSE_SEL = "https://jxfw.gdut.edu.cn/xsxklist!getDataList.action";
+    public const string AcademicAffairsUnderCourseSel = "https://jxfw.gdut.edu.cn/xsxklist!getDataList.action";
 
     /// <summary>本科生选课已选列表</summary>
-    public const string UNDER_COURSE_SEL_ED = "https://jxfw.gdut.edu.cn/xsxklist!getXzkcList.action";
+    public const string AcademicAffairsUnderCourseSelected = "https://jxfw.gdut.edu.cn/xsxklist!getXzkcList.action";
 
     /// <summary>本科生获取课程任务</summary>
-    public const string UNDER_COURSE_TASK = "https://jxfw.gdut.edu.cn/xsxklist!getJxrlDataList.action";
+    public const string AcademicAffairsUnderCourseTask = "https://jxfw.gdut.edu.cn/xsxklist!getJxrlDataList.action";
 
     /// <summary>本科生获取考级成绩</summary>
-    public const string UNDER_GRADING_EXAM_SCORE = "https://jxfw.gdut.edu.cn/xskjcjxx!getDataList.action";
+    public const string AcademicAffairsUnderGradingExamScore = "https://jxfw.gdut.edu.cn/xskjcjxx!getDataList.action";
 
     /// <summary>本科生获取可用教学计划</summary>
-    public const string UNDER_TEACHING_PLAN_AVALIABLE = "https://jxfw.gdut.edu.cn/xsjxjhxx!getDataList1.action";
+    public const string AcademicAffairsUnderAvailableTeachingPlan = "https://jxfw.gdut.edu.cn/xsjxjhxx!getDataList1.action";
 
     /// <summary>本科生获取教学计划详情</summary>
     /// <remarks>在末尾补充教学计划代码</remarks>
-    public const string UNDER_TEACHING_PLAN_DETAIL = "https://jxfw.gdut.edu.cn/xsjxjhxx!getKcDataList.action?jxjhdm=";
+    public const string AcademicAffairsUnderTeachingPlanDetail = "https://jxfw.gdut.edu.cn/xsjxjhxx!getKcDataList.action?jxjhdm=";
 
     /// <summary>本科生获取学期注册信息</summary>
-    public const string UNDER_SEMESTER_REG = "https://jxfw.gdut.edu.cn/xsxqzccx!getDataList.action";
+    public const string AcademicAffairsUnderSemesterReg = "https://jxfw.gdut.edu.cn/xsxqzccx!getDataList.action";
 
     #endregion
 
     #region 图书馆
 
-    /// <summary>图书馆登录链接</summary>
-    public const string LIBRARY_LOGIN = "https://opac.gdut.edu.cn/sso-cas/cas/index/gdut";
+    /// <summary>图书馆统一认证中心登录链接</summary>
+    public const string LibraryLogin = "https://opac.gdut.edu.cn/sso-cas/cas/index/gdut";
 
     /// <summary>图书馆借阅列表</summary>
-    public const string LIBRARY_LOAN_LIST = "https://opac.gdut.edu.cn/find/loanInfo/loanList";
+    public const string LibraryLoanList = "https://opac.gdut.edu.cn/find/loanInfo/loanList";
 
     /// <summary>图书馆每日推荐</summary>
-    public const string LIBRARY_DAILY_RECOMMEND = "https://opac.gdut.edu.cn/find/subscribe/dailyRecommend?";
+    public const string LibraryDalyRecommend = "https://opac.gdut.edu.cn/find/subscribe/dailyRecommend?";
 
     #endregion
 
@@ -103,16 +105,16 @@ public static class GSConst
 
     #region 体质测试平台
 
-    public const string SPORTS_TEST_BASE = "http://tzcs.gdut.edu.cn/";
+    public const string SportsTestLogin = "http://tzcs.gdut.edu.cn/Src/PlatForm/User/Login.aspx?Mode=2";
 
-    public const string SPORTS_TEST_CAPTCHA = "http://tzcs.gdut.edu.cn/Src/PlatForm/GetCheckCode.aspx";
+    public const string SportsTestGetCaptcha = "http://tzcs.gdut.edu.cn/Src/PlatForm/GetCheckCode.aspx";
 
     /// <summary>个人主页</summary>
-    public const string SPORTS_TEST_PERSONAL = "http://tzcs.gdut.edu.cn/Src/PlatForm/Personal/Index.aspx";
+    public const string SportsTestPersonal = "http://tzcs.gdut.edu.cn/Src/PlatForm/Personal/Index.aspx";
 
     /// <summary>历史成绩</summary>
     /// <remarks>在末尾补上年份，如“2026”</remarks>
-    public const string SPORTS_TEST_SCORE = "http://tzcs.gdut.edu.cn/Src/PlatForm/Personal/PHTest_StudentScore_H.aspx?DataYear=";
+    public const string SportsTestScore = "http://tzcs.gdut.edu.cn/Src/PlatForm/Personal/PHTest_StudentScore_H.aspx?DataYear=";
 
     #endregion
 

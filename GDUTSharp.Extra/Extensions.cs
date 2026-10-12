@@ -61,7 +61,7 @@ public static class Extensions
                 c.Start = new(dtStart);
                 c.End = new(dtEnd);
 
-                if (opt.SetAlarm(lesson) is { } alarm)
+                if (opt.GetAlarm(lesson) is { } alarm)
                 {
                     c.Alarms.Add(alarm);
                 }
@@ -90,21 +90,21 @@ public static class Extensions
         /// <summary>
         /// 解析从教学服务中心导出的课程安排文件
         /// </summary>
-        public static List<Lesson> Read(Stream stream, JXFWFileType type = JXFWFileType.AutoDetect)
+        public static List<Lesson> Read(Stream stream, LessonsFileType type = LessonsFileType.AutoDetect)
         {
             using StreamReader reader = new(stream);
             List<Lesson> result = [];
             switch (type)
             {
                 default:
-                case JXFWFileType.AutoDetect:
+                case LessonsFileType.AutoDetect:
                     var r = stream.ReadByte();
                     stream.Seek(0, SeekOrigin.Begin);
-                    if (r is '"') goto case JXFWFileType.CSV;
-                    if (r is '<') goto case JXFWFileType.XLS;
+                    if (r is '"') goto case LessonsFileType.CSV;
+                    if (r is '<') goto case LessonsFileType.XLS;
                     throw new FileLoadException("Could not detect the file type.");
-                case JXFWFileType.CSV:
-                case JXFWFileType.TEXT:
+                case LessonsFileType.CSV:
+                case LessonsFileType.TEXT:
                     reader.ReadLine();  // Skip header
                     {
                         using StringReader temp = new(WebUtility.HtmlDecode(reader.ReadToEnd()));
@@ -116,8 +116,8 @@ public static class Extensions
                         }
                     }
                     break;
-                case JXFWFileType.XLS:
-                case JXFWFileType.DOC:
+                case LessonsFileType.XLS:
+                case LessonsFileType.DOC:
                     HtmlDocument doc = new();
                     doc.Load(stream);
                     var trNodes = doc.DocumentNode.SelectNodes("//tr");
@@ -240,7 +240,7 @@ public static class Extensions
                 Start = new(dtStart),
                 End = new(dtEnd),
             };
-            if (opt.SetAlarm(schedule) is { } alarm)
+            if (opt.GetAlarm(schedule) is { } alarm)
             {
                 c.Alarms.Add(alarm);
             }
@@ -357,41 +357,31 @@ public static class Extensions
         }
     }
 
-    // IDataService
-    // 这里是不适合放在 IJXFWService 接口中的扩展方法，因为它们依赖于接口的实现类的具体行为
-    extension(IJXFWService dataService)
+    // IAcademicAffairsService
+    // 这里是不适合放在 IAcademicAffairsService 接口中的扩展方法，因为它们依赖于接口的实现类的具体行为
+    extension(IAcademicAffairsService services)
     {
         /// <summary>
-        /// 获取指定年份的学分绩点和学业成绩平均分，注意检查两个学期的课程成绩是否都获取成功（即 term1Count 和 term2Count 均正常）
+        /// 获取指定年份的学分绩点和学业成绩平均分，注意检查两个学期的课程成绩是否都获取成功
         /// </summary>
         /// <param name="year">
         /// 四位数字的年份，填秋季的那年，如某一学年的上学期为2025秋季，下学期为2026春季，則 year 应为 "2025"
         /// </param>
-        public async Task<(int term1Count, int term2Count, float GPA, float averageGrade)> GetGPAAndAverageGrade(CookieContainer cookies, int year, CancellationToken token = default)
+        /// <returns>
+        /// gpa 是平均学分绩点，范围在 0.0-5.0，averageGrade 是平均学业成绩，范围在 0.0-100.0
+        /// </returns>
+        public async Task<(List<CourseScore> term1Score, List<CourseScore> term2Score, float gpa, float averageGrade)> GetGPAAndAverageGrade(CookieContainer cookies, int year, CancellationToken token = default)
         {
             Term term = new(year, TermPeriod.First);
-            var scores1 = await dataService.GetCourseScore(cookies, term, token);
+            var scores1 = await services.GetCourseScore(cookies, term, token);
+            ArgumentNullException.ThrowIfNull(scores1, nameof(scores1));
             term.Period = TermPeriod.Second;
-            var scores2 = await dataService.GetCourseScore(cookies, term, token);
-            if (scores1 is null || scores2 is null)
-            {
-                throw new NullReferenceException("课程成绩获取异常");
-            }
+            var scores2 = await services.GetCourseScore(cookies, term, token);
+            ArgumentNullException.ThrowIfNull(scores2, nameof(scores2));
             List<CourseScore> courseScores = [.. scores1, .. scores2];
             var gpa = courseScores.GetGPA();
             var averageGrade = courseScores.GetAverageGrade();
-            return (scores1.Count, scores2.Count, gpa, averageGrade);
+            return (scores1, scores2, gpa, averageGrade);
         }
-    }
-
-    public enum JXFWFileType
-    {
-        AutoDetect,
-        // 以下四种是教学管理系统上显示的支持导出的格式，然而实际上有几种会导出
-        // 完全相同的文件。因此我们将 DOC 视作 XLS，把 TEXT 视作 CSV 进行处理。
-        XLS,
-        DOC,
-        CSV,
-        TEXT,
     }
 }

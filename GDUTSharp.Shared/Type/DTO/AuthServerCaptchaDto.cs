@@ -16,8 +16,8 @@ public class AuthServerCaptchaDto
     {
         return new AuthServerCaptcha
         {
-            BigImage = dto.bigImage,
-            SmallImage = dto.smallImage,
+            BigImage = Convert.FromBase64String(dto.bigImage),
+            SmallImage = Convert.FromBase64String(dto.smallImage),
         };
     }
 }
