@@ -64,7 +64,6 @@ namespace GDUTSharp.Shared.Json;
 [JsonSerializable(typeof(NoticeCollection))]
 [JsonSerializable(typeof(List<Notice>))]
 
-[JsonSerializable(typeof(AuthServerCaptchaDto))]
 [JsonSerializable(typeof(AuthServerCaptcha))]
 [JsonSerializable(typeof(SliderTrackDto))]
 [JsonSerializable(typeof(SliderPayloadDto))]

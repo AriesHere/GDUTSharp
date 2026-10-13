@@ -20,7 +20,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Log.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\BookInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\CourseSel.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\AuthServerCaptchaDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\BookInfoDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\CourseScoreDto.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Type\DTO\CourseSelDto.cs" />

@@ -1,4 +1,5 @@
-﻿using GDUTSharp.Shared.Attributes;
+﻿using System.Text.Json.Serialization;
+using GDUTSharp.Shared.Attributes;
 
 namespace GDUTSharp.Shared.Type
 {
@@ -16,7 +17,10 @@ namespace GDUTSharp.Shared.Type
     [OverrideToString]
     public partial class AuthServerCaptcha
     {
+        [JsonPropertyName("smallImage")]
         public byte[] SmallImage { get; set; } = [];
+
+        [JsonPropertyName("bigImage")]
         public byte[] BigImage { get; set; } = [];
         public byte[] SafeSecure => SmallImage[^16..];
     }
