@@ -71,21 +71,25 @@ public static class Extensions
         }
     }
 
-    // List<Lesson>
-    extension(List<Lesson> lessonList)
+    // IEnumerable<Lesson>
+    extension(IEnumerable<Lesson> lessons)
     {
         public Calendar ToCalendar(ICalConvertOptions<Lesson> opt)
         {
             Calendar result = new();
-            lessonList.ForEach(l => l.ToCalendarEvent(opt).ForEach(result.Events.Add));
+            var lessonsData = opt.IsReverseOrder ? lessons.Reverse() : lessons;
+            foreach (var item in lessonsData)
+            {
+                item.ToCalendarEvent(opt).ForEach(result.Events.Add);
+            }
             return result;
         }
 
         public string? ToCalendarString(ICalConvertOptions<Lesson> opt) =>
-            new CalendarSerializer().SerializeToString(lessonList.ToCalendar(opt));
+            new CalendarSerializer().SerializeToString(lessons.ToCalendar(opt));
 
         public async Task WriteAsICS(string path, ICalConvertOptions<Lesson> opt) =>
-            await File.WriteAllTextAsync(path, lessonList.ToCalendarString(opt));
+            await File.WriteAllTextAsync(path, lessons.ToCalendarString(opt));
 
         /// <summary>
         /// 解析从教学服务中心导出的课程安排文件
@@ -208,7 +212,7 @@ public static class Extensions
             ws.FillDataToWrokSheet<Lesson>(
                 Helper.WSDesc,
                 new(header, XLColor.LightBlue, true),
-                new(GetContent, lessonList),
+                new(GetContent, lessons),
                 isAdjustToContents,
                 true,
                 isAdjustToContents ? "SimSun" : null);
@@ -248,21 +252,25 @@ public static class Extensions
         }
     }
 
-    // List<ExamSchedule>
-    extension(List<ExamSchedule> scheduleList)
+    // IEnumerable<ExamSchedule>
+    extension(IEnumerable<ExamSchedule> schedules)
     {
         public Calendar ToCalendar(ICalConvertOptions<ExamSchedule> opt)
         {
             Calendar result = new();
-            scheduleList.ForEach(schedule => result.Events.Add(schedule.ToCalendarEvent(opt)));
+            var scheduleData = opt.IsReverseOrder ? schedules.Reverse() : schedules;
+            foreach (var item in scheduleData)
+            {
+                result.Events.Add(item.ToCalendarEvent(opt));
+            }
             return result;
         }
 
         public string? ToCalendarString(ICalConvertOptions<ExamSchedule> opt) =>
-            new CalendarSerializer().SerializeToString(scheduleList.ToCalendar(opt));
+            new CalendarSerializer().SerializeToString(schedules.ToCalendar(opt));
 
         public async Task WriteAsICS(string path, ICalConvertOptions<ExamSchedule> opt) =>
-            await File.WriteAllTextAsync(path, scheduleList.ToCalendarString(opt));
+            await File.WriteAllTextAsync(path, schedules.ToCalendarString(opt));
 
         /// <summary>
         /// 导出为 xlsx 文件
@@ -285,7 +293,7 @@ public static class Extensions
                 "安排类型",
                 "考试形式",
                 "试卷编号",};
-            static IList<object> GetContent(ExamSchedule es) =>
+            static IEnumerable<object> GetContent(ExamSchedule es) =>
                 [
                     es.Name,
                     es.Campus,
@@ -304,7 +312,7 @@ public static class Extensions
             ws.FillDataToWrokSheet<ExamSchedule>(
                 Helper.WSDesc,
                 new(header, XLColor.LightBlue, true),
-                new(GetContent, scheduleList),
+                new(GetContent, schedules),
                 isAdjustToContents,
                 true,
                 isAdjustToContents ? "SimSun" : null);

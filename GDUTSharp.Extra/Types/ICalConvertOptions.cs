@@ -24,6 +24,9 @@ public sealed class ICalConvertOptions<T>
     /// <summary>默认提醒</summary>
     public Alarm? Alarm = null;
 
+    /// <summary>是否逆序遍历</summary>
+    public bool IsReverseOrder = false;
+
     /// <remarks>仅在转换时调用</remarks>
     public Alarm? GetAlarm(T source)
     {
