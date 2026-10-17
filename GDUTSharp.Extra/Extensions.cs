@@ -35,7 +35,7 @@ public static class Extensions
                 CalendarEvent c = new()
                 {
                     Summary = lesson.Name,
-                    Description = lesson.Profile,
+                    Description = opt.GetDescriptionFunc.Invoke(lesson),
                     Location = lesson.Location,
                 };
                 // time
@@ -230,16 +230,7 @@ public static class Extensions
             CalendarEvent c = new()
             {
                 Summary = schedule.Name,
-                Description = $"""
-                课程名称：{schedule.Name}
-                校区：{schedule.Campus}
-                地点：{schedule.Location}
-                监考老师：{schedule.Teachers}
-                考试类别：{schedule.ExamType}
-                安排类型：{schedule.ScheduleType}
-                考试形式：{schedule.Format}
-                试卷编号：{schedule.ExamPaperNumber}
-                """,
+                Description = opt.GetDescriptionFunc.Invoke(schedule),
                 Location = schedule.Location,
                 Start = new(dtStart),
                 End = new(dtEnd),

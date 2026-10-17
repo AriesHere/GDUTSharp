@@ -3,6 +3,7 @@ using Ical.Net.CalendarComponents;
 
 namespace GDUTSharp.Extra.Types;
 
+// TODO: 分类，自定义内容
 public sealed class ICalConvertOptions<T>
 {
     public SessionCollection Sessions = SessionCollection.Default;
@@ -15,6 +16,32 @@ public sealed class ICalConvertOptions<T>
     public DateOnly? StartDate = null;
 
     public List<string> Categories = [];
+
+    #region Description
+
+    /// <summary>设置 <see cref="RecurringComponent.Description"/></summary>
+    public Func<T, string> GetDescriptionFunc { get; set; } = GetDescription;
+
+    /// <summary><see cref="GetDescriptionFunc"/> 的默认实现</summary>
+    public static string GetDescription(T item) => item switch
+    {
+        Lesson lesson => lesson.Profile,
+        ExamSchedule schedule => $"""
+            课程名称：{schedule.Name}
+            校区：{schedule.Campus}
+            地点：{schedule.Location}
+            监考老师：{schedule.Teachers}
+            考试类别：{schedule.ExamType}
+            安排类型：{schedule.ScheduleType}
+            考试形式：{schedule.Format}
+            试卷编号：{schedule.ExamPaperNumber}
+            """,
+        _ => throw new NotImplementedException(),
+    };
+
+    #endregion
+
+    #region Alarm
 
     /// <summary>
     /// 通过传入的类来设置提醒，如果返回 null，则使用默认提醒（即 <see cref="Alarm"/>）
@@ -40,4 +67,6 @@ public sealed class ICalConvertOptions<T>
         }
         return result;
     }
+
+    #endregion
 }
