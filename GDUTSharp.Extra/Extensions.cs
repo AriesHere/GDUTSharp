@@ -22,11 +22,7 @@ public static class Extensions
             List<CalendarEvent> result = [];
             List<(TimeOnly, TimeOnly)> temp = [];
             if (opt.IsMergeIfContinuous)
-            {
-                var groups = lesson.Sessions.SplitIntoConsecutiveGroups();
-                foreach (var item in groups)
-                    temp.Add(new(opt.Sessions[item[0] - 1].StartTime, opt.Sessions[item[^1] - 1].EndTime));
-            }
+                temp.Add(new(opt.Sessions[lesson.Sessions[0] - 1].StartTime, opt.Sessions[lesson.Sessions[0] - 1].EndTime));
             else foreach (var item in lesson.Sessions)
                 temp.Add(new(opt.Sessions[item - 1].StartTime, opt.Sessions[item - 1].EndTime));
 
@@ -37,29 +33,15 @@ public static class Extensions
                     Summary = lesson.Name,
                     Description = opt.GetDescriptionFunc.Invoke(lesson),
                     Location = lesson.Location,
+                    Categories = opt.Categories,
                 };
                 // time
-                DateTime dtStart;
-                DateTime dtEnd;
-                if (lesson.Date is { })
-                {
-                    dtStart = lesson.Date.ToDateTime(start);
-                    dtEnd = lesson.Date.ToDateTime(end);
-                }
-                else
-                {
-                    if (opt.StartDate is not null)
-                    {
-                        dtStart = opt.StartDate.Value.ToDateTime(start).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
-                        dtEnd = opt.StartDate.Value.ToDateTime(end).AddDays(lesson.Week * 7 + lesson.DayOfWeek - 1);
-                    }
-                    else
-                    {
-                        throw new InvalidDataException("Unable to get DateTime");
-                    }
-                }
-                c.Start = new(dtStart);
-                c.End = new(dtEnd);
+                var date = lesson.Date == DateOnly.MinValue
+                    ? opt.StartDate ?? throw new InvalidDataException("Unable to get DateTime")
+                    : lesson.Date;
+                var offset = lesson.Date == DateOnly.MinValue ? lesson.Week * 7 + lesson.DayOfWeek - 1 : 0;
+                c.Start = new(date.ToDateTime(start).AddDays(offset));
+                c.End = new(date.ToDateTime(end).AddDays(offset));
 
                 if (opt.GetAlarm(lesson) is { } alarm)
                 {
@@ -232,6 +214,7 @@ public static class Extensions
                 Summary = schedule.Name,
                 Description = opt.GetDescriptionFunc.Invoke(schedule),
                 Location = schedule.Location,
+                Categories = opt.Categories,
                 Start = new(dtStart),
                 End = new(dtEnd),
             };
