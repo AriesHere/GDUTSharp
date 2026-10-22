@@ -62,6 +62,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
             {
                 AuthServices.AcademicAffairs => GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
                 AuthServices.Library => GSConst.AuthServerAuth + GSConst.LibraryLogin,
+                AuthServices.Ehall => GSConst.AuthServerAuth + GSConst.EhallLogin,
                 _ => GSConst.AuthServerLogin,
             };
             request = new HttpRequestMessage(HttpMethod.Post, url);

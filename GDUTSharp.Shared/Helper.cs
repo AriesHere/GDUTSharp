@@ -28,6 +28,20 @@ public static partial class Helper
             currentIndex = endIndex + 1;
             return s[index..endIndex];
         }
+
+        /// <summary>
+        /// 从字符串中提取 <paramref name="end"/> 和 <paramref name="start"/> 之间的内容，并返回 <paramref name="end"/> 的索引
+        /// </summary>
+        /// <remarks>
+        /// 注意：<paramref name="end"/> 离 <paramref name="endIndex"/> 远，<paramref name="start"/> 离 <paramref name="endIndex"/> 近
+        /// </remarks>
+        public string LastExtract(string end, string start, out int currentIndex, int endIndex = 0)
+        {
+            var index = s.LastIndexOf(start, endIndex) - start.Length;
+            var startIndex = s.LastIndexOf(end, index);
+            currentIndex = startIndex;
+            return s[startIndex..index];
+        }
     }
 
     public static Dictionary<TKey, TValue> AddIfNotExist<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull

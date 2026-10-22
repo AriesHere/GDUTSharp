@@ -14,6 +14,7 @@ public enum AuthServices
 {
     AcademicAffairs,
     Library,
+    Ehall,
 }
 
 /// <summary>从教学管理系统导出的课程数据文件类型</summary>

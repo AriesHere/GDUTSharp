@@ -118,6 +118,20 @@ public static class GSConst
 
     #endregion
 
+    #region 融合门户
+
+    public const string EhallIndex = "https://ehall.gdut.edu.cn/index.html";
+
+    public const string EhallLogin = "https://ehall.gdut.edu.cn/login?portalService=https%3A%2F%2Fehall.gdut.edu.cn%2Findex.html%23%2F";
+
+    public const string EhallPageView = "https://ehall.gdut.edu.cn/getPageView";
+
+    /// <summary>获取数据</summary>
+    /// <remarks>将 {0} 替换为 cardWid </remarks>
+    public const string EhallGetData = "https://ehall.gdut.edu.cn/execCardMethod/{0}/CUS_CARD_MYDATA";
+
+    #endregion
+
     // =============== 以下均暂时未使用 ===============
 
     // 研究生登录链接
@@ -135,18 +149,6 @@ public static class GSConst
     public const string GRADUATE_KB = "https://yjsxt.gdut.edu.cn/gsapp/sys/wdkbapp/modules/xskcb/xspkjgcx.do?XNXQDM=20221&*order=<*order>";
     // 考试成绩
     public const string GRADUATE_EXAM = "https://yjsxt.gdut.edu.cn/gsapp/sys/wdcjapp/modules/wdcj/xscjcx.do";
-
-    // 从 ehall 获得用户个人信息，用来测试是否登录成功
-    public const string GRADUATE_USER_INFO = "https://ehall.gdut.edu.cn/gsapp/sys/wdkbapp/wdkcb/initXsxx.do?XH=";
-
-    // 登录 ehall 大厅 pre 登录
-    public const string EHALL_URL = "https://authserver.gdut.edu.cn/authserver/login?type=userNameLogin";
-
-    // ehall 的个人信息接口，用来获取正确的学号
-    public const string EHALL_USER_INFO = "https://authserver.gdut.edu.cn/personalInfo/common/getUserConf";
-
-    // 后续补充这里即可
-    public const string TEACHER_EHALL_LOGIN = "https://authserver.gdut.edu.cn/";
 
     // TODO： 图书馆图书检索
     public const string LIBRARY_SEARCH = "https://opac.gdut.edu.cn/find/unify/search";

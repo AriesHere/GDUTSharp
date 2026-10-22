@@ -26,6 +26,9 @@ GDUTSharp (保证支持 AOT):
     - 通知数据
 - 体质测试平台
     - 体测成绩
+- 融合门户
+    - 校园卡余额与卡号
+    - 校园网余额与剩余月数
 - 其它
     - 绩点计算
 
@@ -40,12 +43,8 @@ GDUTSharp.Extra:
 IHost AppHost = Host.CreateDefaultBuilder()
     .ConfigureServices((context, services) =>
     {
-        services.AddSingleton<INoticeService, NoticeService>();
         services.AddSingleton<IAuthService, AuthService>();
-        services.AddSingleton<ILibraryService, LibraryService>();
         services.AddSingleton<IAcademicAffairsService, AcademicAffairsService>();
-        services.AddSingleton<ISportsTestService, SportsTestService>();
-        services.AddSingleton<ISecurityService, AesCbcService>();
         services.AddCommonClient(context.Configuration);
     })
     .Build();
