@@ -51,12 +51,12 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         try
         {
             request = new(HttpMethod.Get, GSConst.NOTICE_BEFORE_LOGIN);
-            response = await _client.SendAsync(cookies, request, token);
+            response = await _client.SendAsync(cookies, request, false, token);
             request.Dispose();
             response.Dispose();
 
             request = new(HttpMethod.Get, GSConst.NOTICE_CATEGORIES);
-            response = await _client.SendAsync(cookies, request, token);
+            response = await _client.SendAsync(cookies, request, false, token);
             request.Dispose();
             var r = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
@@ -94,7 +94,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         try
         {
             using HttpRequestMessage request = this.CreateRequest(id, pageNumber, pageSize);
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
             return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.NoticeDtoCollection, token);
         }
         catch (Exception e)

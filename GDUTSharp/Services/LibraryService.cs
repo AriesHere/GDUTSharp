@@ -41,14 +41,14 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
             string refValue = WebUtility.HtmlDecode(r.Extract("value=\"", '"', out _));
             request = new(HttpMethod.Get, refValue);
             request.Headers.Referrer = new(GSConst.LibraryLogin);
-            response = await _client.SendAsync(cookies, request, token);
+            response = await _client.SendAsync(cookies, request, false, token);
             request.Dispose();
 
             r = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
             refValue = WebUtility.HtmlDecode(r.Extract("name=\"refer\" value=\"", '"', out _));
             request = new(HttpMethod.Get, refValue);
-            response = await _client.SendAsync(cookies, request, token);
+            response = await _client.SendAsync(cookies, request, false, token);
             request.Dispose();
 
             r = response.RequestMessage?.RequestUri?.AbsoluteUri;
@@ -75,22 +75,12 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
     {
         try
         {
-            var requestContent = """
-                {
-                    "page": 1,
-                    "rows": 10,
-                    "searchType": 1,
-                    "searchContent": "",
-                    "sortType": 0,
-                    "startDate": null,
-                    "endDate": null
-                }
-                """;
+            var requestContent = """{"page":1,"rows":10,"searchType":1,"searchContent":"","sortType":0,"startDate":null,"endDate":null}""";
             using var request = new HttpRequestMessage(HttpMethod.Post, GSConst.LibraryLoanList)
             {
                 Content = new StringContent(requestContent, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
             };
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
             var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.BorrowedBookDtoCollection, token);
             return result;
         }
@@ -108,7 +98,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.LibraryDalyRecommend);
             request.Headers.Referrer = new(GSConst.LibraryDalyRecommend);
             if (jwtOpacAuth is not null) request.Headers.Add("jwtOpacAuth", jwtOpacAuth);
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
             var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.DailyRecommandDtoCollection, token);
             if (result is null) return null;
             else return result;

@@ -32,7 +32,7 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
                 _ => GSConst.AuthServerLogin,
             };
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
-            HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
@@ -74,7 +74,7 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
                         GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
                         formData,
                         GSConst.AcademicAffairsUnderLogin);
-                    response = await _client.SendAsync(cookies, request2, token);
+                    response = await _client.SendAsync(cookies, request2, true, token);
                 }
             }
             else Log.Login(_logger);

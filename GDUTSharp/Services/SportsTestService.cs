@@ -19,7 +19,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SportsTestGetCaptcha);
-            using var response = await _client.SendAsync(cookies, request, token);
+            using var response = await _client.SendAsync(cookies, request, false, token);
             return await response.Content.ReadAsByteArrayAsync(token);
         }
         catch (Exception e)
@@ -34,7 +34,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SportsTestPersonal);
-            using var response = await _client.SendAsync(cookies, request, token);
+            using var response = await _client.SendAsync(cookies, request, false, token);
             if (response.StatusCode is HttpStatusCode.Found)
             {
                 Log.LoginStatusInvalid(_logger);
@@ -68,7 +68,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         try
         {
             request = new(HttpMethod.Get, GSConst.SportsTestPersonal);
-            response = await _client.SendAsync(cookies, request, token);
+            response = await _client.SendAsync(cookies, request, false, token);
             request.Dispose();
             var rq = response.RequestMessage;
             if (rq!.RequestUri!.AbsoluteUri is GSConst.SportsTestPersonal)
@@ -123,7 +123,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
                 { "hidReferUrl", hidReferUrl },
             };
             request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.SportsTestLogin, requestContent);
-            response = await _client.SendAsync(cookies, request, token);
+            response = await _client.SendAsync(cookies, request, false, token);
             request.Dispose();
             var r = await response.Content.ReadAsStringAsync(token);
             return r.StartsWith("<script language='javascript'>");
@@ -145,7 +145,7 @@ public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient 
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.SportsTestScore + year);
-            using var response = await _client.SendAsync(cookies, request, token);
+            using var response = await _client.SendAsync(cookies, request, false, token);
             var html = await response.Content.ReadAsStringAsync(token);
             var cur = html.IndexOf("未查询到该学生ID");
             if (cur != -1) return null;   // 检查是否有成绩

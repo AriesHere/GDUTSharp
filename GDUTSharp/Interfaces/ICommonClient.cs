@@ -4,7 +4,16 @@ namespace GDUTSharp.Interfaces;
 
 public interface ICommonClient
 {
-    public Task<HttpResponseMessage> SendAsync(CookieContainer cookies, HttpRequestMessage request, CancellationToken cancellationToken = default);
+    /// <remarks>
+    /// 如果 <paramref name="allowCrossDomainRedirect"/> 为 <see cref="true"/>，跨域重定向时仅会通过日志
+    /// 发出警告，如果为 <see cref="false"/>，跨域重定向时会抛出 <see cref="InvalidOperationException"/>。
+    /// 除非有必要，否则不应该将其设置为 <see cref="true"/>
+    /// </remarks>
+    public Task<HttpResponseMessage> SendAsync(
+        CookieContainer cookies,
+        HttpRequestMessage request,
+        bool allowCrossDomainRedirect = false,
+        CancellationToken cancellationToken = default);
 
     public static HttpRequestMessage CreateRequest(HttpMethod method, string url, Dictionary<string, string>? content = null, string? referer = null)
     {

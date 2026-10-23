@@ -12,7 +12,8 @@ namespace GDUTSharp.Interfaces;
 /// 获取校园网和校园卡的 wid，再根据实际情况使用二者获得数据
 /// </para>
 /// <para>
-/// 注意：wid 和 cardWid 是两个不同的东西
+/// 注意：wid 和 cardWid 是两个不同的东西。另外暂时不要使用 <see cref="GetCampusCardInfo"/> 和
+/// <see cref="GetCampusNetworkInfo"/>，不知为何，它们的返回值始终为 {"errcode":"0","errmsg":"请求成功","data":null}
 /// </para>
 /// </remarks>
 public interface IEhallService

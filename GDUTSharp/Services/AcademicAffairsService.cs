@@ -55,7 +55,7 @@ public class AcademicAffairsService(
         {
             requestContent["page"] = $"{i}";
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, url, requestContent, url);
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
             var temp = await response.Content.ReadFromJsonAsync(jsonTypeInfo, token);
             var tempResult = temp?.Convert();
             if (r is null)
@@ -79,7 +79,7 @@ public class AcademicAffairsService(
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.AcademicAffairsUnderCaptcha + DateTimeOffset.Now.ToUnixTimeMilliseconds());
-            using var response = await _client.SendAsync(cookies, request, token);
+            using var response = await _client.SendAsync(cookies, request, false, token);
             return await response.Content.ReadAsByteArrayAsync(token);
         }
         catch (Exception e)
@@ -115,7 +115,7 @@ public class AcademicAffairsService(
                 case LoginType.Self:
                     {
                         request = new(HttpMethod.Get, GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin);
-                        response = await _client.SendAsync(cookies, request, token);
+                        response = await _client.SendAsync(cookies, request, false, token);
                         request.Dispose();
                         if (response.StatusCode == HttpStatusCode.OK)   // 需要登录
                         {
@@ -144,7 +144,7 @@ public class AcademicAffairsService(
                             };
                             request = ICommonClient.CreateRequest(
                                 HttpMethod.Post, GSConst.AcademicAffairsUnderSelfLogin, content, GSConst.AcademicAffairsUnderSelfLogin);
-                            response = await _client.SendAsync(cookies, request, token);
+                            response = await _client.SendAsync(cookies, request, false, token);
                             request.Dispose();
                             return !(await response.Content.ReadAsStringAsync(token)).StartsWith("{\"code\":-");
                         }
@@ -172,7 +172,7 @@ public class AcademicAffairsService(
         {
             using var request = ICommonClient.CreateRequest(
                 HttpMethod.Post, GSConst.AcademicAffairsUnderTerm, referer: GSConst.AcademicAffairsUnderTerm);
-            using var response = await _client.SendAsync(cookies, request, token);
+            using var response = await _client.SendAsync(cookies, request, false, token);
             string responseContent = await response.Content.ReadAsStringAsync(token);
             int index = responseContent.IndexOf("selected");
             return new(responseContent[(index - 2 - "202502".Length)..(index - 2)]);
@@ -339,7 +339,7 @@ public class AcademicAffairsService(
                 content["page"] = $"{i}";
                 using var request = ICommonClient.CreateRequest(
                     HttpMethod.Post, GSConst.AcademicAffairsUnderCourseTask, content, GSConst.AcademicAffairsUnderCourseTask);
-                using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+                using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
                 var temp = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.ListLessonDto, token);
                 List<Lesson>? tempResult = temp is null ? null : [..temp];
                 if (r is null)

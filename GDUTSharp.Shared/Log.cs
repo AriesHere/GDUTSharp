@@ -32,6 +32,9 @@ public static partial class Log
     [LoggerMessage(LogLevel.Warning, "忽略非法 Set-Cookie: {Cookie}")]
     public static partial void IgnoreInvalidSetCookie(ILogger logger, string? cookie, Exception? ex);
 
+    [LoggerMessage(LogLevel.Warning, "检测到跨域重定向 {source} -> {target}")]
+    public static partial void CrossDomainRedirect(ILogger logger, string? source, string? target, Exception? ex);
+
     /// <summary>正在登录并认证</summary>
     [LoggerMessage(LogLevel.Information, "正在登录并认证")]
     public static partial void LoginAndAuth(ILogger logger);

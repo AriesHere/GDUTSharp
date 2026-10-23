@@ -66,7 +66,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                 _ => GSConst.AuthServerLogin,
             };
             request = new HttpRequestMessage(HttpMethod.Post, url);
-            HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            HttpResponseMessage response = await _client.SendAsync(cookies, request, true, token);
             request.Dispose();
 
             if (response.StatusCode == HttpStatusCode.OK)   // 需要登录
@@ -102,7 +102,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                         GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
                         formData,
                         GSConst.AcademicAffairsUnderLogin);
-                    response = await _client.SendAsync(cookies, request, token);
+                    response = await _client.SendAsync(cookies, request, true, token);
                 }
             }
             else Log.Login(_logger);
@@ -125,7 +125,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AuthServerLogout);
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
             var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("注销成功");
         }
@@ -141,7 +141,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AuthServerCheckCaptcha + username);
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
             var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("true");
         }
@@ -157,7 +157,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, GSConst.AuthServerGetCaptcha);
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, token);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
             return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.AuthServerCaptcha, token);
         }
         catch (Exception e)
@@ -179,7 +179,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
             string sign = Convert.ToBase64String(_security.Encrypt(this.PrefixProcess(json), safeSecure, RandomNumberGenerator.GetBytes(16)));
             var content = new Dictionary<string, string> { {"sign", sign} };
             using var request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.AuthServerVerifyCaptcha, content);
-            using var response = await _client.SendAsync(cookies, request, token);
+            using var response = await _client.SendAsync(cookies, request, false, token);
             var r = await response.Content.ReadAsStringAsync(token);
             return r.Contains("success");
         }
