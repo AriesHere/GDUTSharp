@@ -14,7 +14,6 @@ namespace GDUTSharp.Interfaces;
 /// <para>
 /// 注意：wid 和 cardWid 是两个不同的东西
 /// </para>
-/// 由于返回的数据都比较简单，就不额外进行封装了
 /// </remarks>
 public interface IEhallService
 {

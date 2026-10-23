@@ -49,8 +49,7 @@ public class EhallService(ILogger<EhallService> logger, ICommonClient client, IA
             using var request = new HttpRequestMessage(HttpMethod.Get, GSConst.EhallPageView);
             using var response = await _client.SendAsync(cookies, request, token);
             var json = await response.Content.ReadAsStringAsync(token);
-            _logger.LogCritical("{0}", await response.Content.ReadAsStringAsync(token));
-            return json.LastExtract("\"cardWid\\\":\\\"", "\",\"showTitle\":false,\"layoutCardTitle\":{\"cardTitle\":\"个人事务\"", out _);
+            return json.LastExtract("\\\"cardWid\\\":\\\"", "\\\",\\\"showTitle\\\":false,\\\"layoutCardTitle\\\":{\\\"cardTitle\\\":\\\"个人事务\\\"", out _);
         }
         catch (Exception e)
         {

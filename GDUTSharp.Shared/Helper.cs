@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace GDUTSharp.Shared;
@@ -30,17 +31,16 @@ public static partial class Helper
         }
 
         /// <summary>
-        /// 从字符串中提取 <paramref name="end"/> 和 <paramref name="start"/> 之间的内容，并返回 <paramref name="end"/> 的索引
+        /// 从字符串中提取 <paramref name="start"/> 和 <paramref name="end"/> 之间的内容，并返回 <paramref name="end"/> 的索引
         /// </summary>
-        /// <remarks>
-        /// 注意：<paramref name="end"/> 离 <paramref name="endIndex"/> 远，<paramref name="start"/> 离 <paramref name="endIndex"/> 近
-        /// </remarks>
-        public string LastExtract(string end, string start, out int currentIndex, int endIndex = 0)
+        public string LastExtract(string start, string end, out int currentIndex, int? startIndex = null)
         {
-            var index = s.LastIndexOf(start, endIndex) - start.Length;
-            var startIndex = s.LastIndexOf(end, index);
-            currentIndex = startIndex;
-            return s[startIndex..index];
+            Debug.WriteLine(s);
+            var endIndex = s.LastIndexOf(end, startIndex ?? s.Length);
+            Debug.WriteLine(endIndex);
+            var index = s.LastIndexOf(start, endIndex) + start.Length;
+            currentIndex = index;
+            return s[index..endIndex];
         }
     }
 

@@ -124,7 +124,7 @@ public static class GSConst
 
     public const string EhallLogin = "https://ehall.gdut.edu.cn/login?portalService=https%3A%2F%2Fehall.gdut.edu.cn%2Findex.html%23%2F";
 
-    public const string EhallPageView = "https://ehall.gdut.edu.cn/getPageView";
+    public const string EhallPageView = "https://ehall.gdut.edu.cn/getPageInfo";
 
     /// <summary>获取数据</summary>
     /// <remarks>将 {0} 替换为 cardWid </remarks>
