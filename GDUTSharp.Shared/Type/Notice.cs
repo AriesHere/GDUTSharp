@@ -1,6 +1,8 @@
-﻿namespace GDUTSharp.Shared.Type;
+﻿using System.Collections;
 
-public class NoticeCollection
+namespace GDUTSharp.Shared.Type;
+
+public class NoticeCollection : IEnumerable<Notice>
 {
     public int PageCount { get; set; }
 
@@ -9,6 +11,14 @@ public class NoticeCollection
     public int CurrentPage { get; set; }
 
     public List<Notice> Notices { get; set; } = [];
+
+    public Notice this[int index] => this.Notices[index];
+
+    public int Count => this.Notices.Count;
+
+    public IEnumerator<Notice> GetEnumerator() => this.Notices.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }
 
 /// <remarks>
@@ -30,15 +40,15 @@ public partial class Notice
 
     public string PublishDepart { get; set; } = string.Empty;
 
-    public DateTime CreateDate { get; set; }
+    public DateTime? CreateDate { get; set; }
 
-    public DateTime PublishDate { get; set; }
+    public DateTime? PublishDate { get; set; }
 
     public string TypeName { get; set; } = string.Empty;
 
     public int ReadCount { get; set; }
 
-    public string GetNoticeUrl() => GSConst.NOTICE_DETAIL + this.Id;
+    public string GetNoticeUrl() => GSConst.NoticeDetail + this.Id;
 
-    public string GetImageUrl() => GSConst.NOTICE_BASE + this.ImageUrl;
+    public string GetImageUrl() => GSConst.NoticeBase + this.ImageUrl;
 }

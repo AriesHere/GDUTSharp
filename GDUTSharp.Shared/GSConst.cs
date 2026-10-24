@@ -87,19 +87,21 @@ public static class GSConst
 
     #region 通知公文网
 
-    public const string NOTICE_BASE = "https://oas.gdut.edu.cn";
+    public const string NoticeBase = "https://oas.gdut.edu.cn";
 
-    public const string NOTICE_BEFORE_LOGIN = "https://oas.gdut.edu.cn/seeyon/main.do";
+    public const string NoticeBeforeLogin = "https://oas.gdut.edu.cn/seeyon/main.do";
 
     /// <summary>分类数据</summary>
-    public const string NOTICE_CATEGORIES = "https://oas.gdut.edu.cn/seeyon/ggIP.do?method=portalSeachIndex";
+    public const string NoticeCategories = "https://oas.gdut.edu.cn/seeyon/ggIP.do?method=portalSeachIndex";
 
     /// <summary>某分类下的通知数据</summary>
-    public const string NOTICE_CATEGORIES_GET = "https://oas.gdut.edu.cn/seeyon/ajax.do?method=ajaxAction&managerName=newsDataManager";
+    public const string NoticeGetCategories = "https://oas.gdut.edu.cn/seeyon/ajax.do?method=ajaxAction&managerName=newsDataManager";
 
     /// <summary>通知详情</summary>
     /// <remarks>在末尾补充通知的 id</remarks>
-    public const string NOTICE_DETAIL = "https://oas.gdut.edu.cn/seeyon/newsData.do?method=newsView&newsId=";
+    public const string NoticeDetail = "https://oas.gdut.edu.cn/seeyon/newsData.do?method=newsView&newsId=";
+
+    public const string NoticeQuery = "https://oas.gdut.edu.cn/seeyon/ajax.do?method=ajaxAction&managerName=ggManager";
 
     #endregion
 

@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Json;
@@ -39,7 +38,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
                 }]
                 """ },
         };
-        return ICommonClient.CreateRequest(HttpMethod.Post, GSConst.NOTICE_CATEGORIES_GET, content);
+        return ICommonClient.CreateRequest(HttpMethod.Post, GSConst.NoticeGetCategories, content);
     }
 
     public virtual async Task<(Dictionary<string, string> MainCategories, Dictionary<string, string> SubCategories)?> Preprocess(
@@ -50,18 +49,18 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         HttpResponseMessage? response = null;
         try
         {
-            request = new(HttpMethod.Get, GSConst.NOTICE_BEFORE_LOGIN);
+            request = new(HttpMethod.Get, GSConst.NoticeBeforeLogin);
             response = await _client.SendAsync(cookies, request, false, token);
             request.Dispose();
             response.Dispose();
 
-            request = new(HttpMethod.Get, GSConst.NOTICE_CATEGORIES);
+            request = new(HttpMethod.Get, GSConst.NoticeCategories);
             response = await _client.SendAsync(cookies, request, false, token);
             request.Dispose();
             var r = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
 
-            var matches = Helper.Notice_CategoriesRegex().Matches(r);
+            var matches = Helper.NoticeCategoriesRegex().Matches(r);
             if (matches.Count <= 4)
             {
                 throw new ArgumentException("正则匹配失败");
@@ -100,6 +99,34 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         catch (Exception e)
         {
             Log.TryFailed(_logger, "获取通知数据时抛出异常。 {Exception}", e);
+            return null;
+        }
+    }
+
+    public async Task<NoticeCollection?> QueryNotices(
+        CookieContainer cookies,
+        int pageNumber,
+        int pageSize = INoticeService.DefaultPageSize,
+        string? subject = null,
+        string? departmentId = null,
+        string? newsTypeId = null,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        CancellationToken token = default)
+    {
+        try
+        {
+            var content = new Dictionary<string, string> {
+                { "managerMethod", "kkFindListDatas" },
+                { "arguments", $$"""[{"page":{{pageNumber}},"size":{{pageSize}}},{"subject":"{{subject}}","departmentName":"{{departmentId}}","newsType":"{{newsTypeId}}","startDate":"{{startDate}}","endDate":"{{endDate}}","canLogin":"true","ticket":""}]""" },
+            };
+            using HttpRequestMessage request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.NoticeQuery, content);
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
+            return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.NoticeDtoCollection, token);
+        }
+        catch (Exception e)
+        {
+            Log.TryFailed(_logger, "查询通知数据时抛出异常。 {Exception}", e);
             return null;
         }
     }

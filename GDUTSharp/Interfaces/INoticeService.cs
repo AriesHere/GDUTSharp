@@ -10,6 +10,8 @@ namespace GDUTSharp.Interfaces;
 /// </remarks>
 public interface INoticeService
 {
+    public const int DefaultPageSize = 20;
+
     /// <summary>预处理</summary>
     /// <remarks>
     /// 由于通知公文网的特殊性，无法单独获取各分类信息
@@ -24,14 +26,28 @@ public interface INoticeService
         CookieContainer cookies,
         string id,
         int pageNumber,
-        int pageSize = 20,
+        int pageSize = DefaultPageSize,
+        CancellationToken token = default);
+
+    /// <remarks></remarks>
+    /// <param name="departmentId">通过 <see cref="Preprocess(CookieContainer, CancellationToken)"/> 获取（副分类）</param>
+    /// <param name="newsTypeId">通过 <see cref="Preprocess(CookieContainer, CancellationToken)"/> 获取（主分类）</param>
+    public Task<NoticeCollection?> QueryNotices(
+        CookieContainer cookies,
+        int pageNumber,
+        int pageSize = DefaultPageSize,
+        string? subject = null,
+        string? departmentId = null,
+        string? newsTypeId = null,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
         CancellationToken token = default);
 
     /// <summary>拼接通知详情的 url</summary>
-    public static string GetNoticeDetailUrl(string id) => GSConst.NOTICE_DETAIL + id;
+    public static string GetNoticeDetailUrl(string id) => GSConst.NoticeDetail + id;
 
     /// <summary>拼接通知图片的 url</summary>
     /// <remarks><paramref name="imageUrl"/> 是 <see cref="Notice.ImageUrl"/></remarks>
     /// <param name="imageUrl">使用 <see cref="Notice.ImageUrl"/></param>
-    public static string GetNoticeImageUrl(string imageUrl) => GSConst.NOTICE_BASE + imageUrl;
+    public static string GetNoticeImageUrl(string imageUrl) => GSConst.NoticeBase + imageUrl;
 }

@@ -10,17 +10,21 @@ public class NoticeDtoCollection
     public int pages { get; set; }
     
     public int size { get; set; }
+
+    public int total { get; set; }
     
     public int pageNo { get; set; }
 
     public List<NoticeDto> list { get; set; } = [];
 
+    public List<NoticeDto> data { get; set; } = [];
+
     public static implicit operator NoticeCollection?(NoticeDtoCollection? source) => 
         source is null ? null : new()
         {
-            Notices = [..source.list],
+            Notices = [..source.list, ..source.data],
             CurrentPage = source.pageNo,
-            Total = source.size,
+            Total = source.size == 0 ? source.size : source.total,
             PageCount = source.pages,
         };
 }
@@ -40,11 +44,14 @@ public class NoticeDto
     public string publishUserDepart { get; set; } = string.Empty;
 
     [JsonConverter(typeof(FlexibleDateTimeConverter))]
-    public DateTime createDate { get; set; }
+    public DateTime? createDate { get; set; }
 
-    /// <remarks>原始数据中有 publishDate 而这里使用 publishDate1 是因为后者能精确到秒</remarks>
+    /// <remarks>此数据能精确到秒，应当优先使用</remarks>
     [JsonConverter(typeof(FlexibleDateTimeConverter))]
-    public DateTime publishDate1 { get; set; }
+    public DateTime? publishDate1 { get; set; }
+
+    [JsonConverter(typeof(FlexibleDateTimeConverter))]
+    public DateTime? publishDate { get; set; }
 
     public string typeName { get; set; } = string.Empty;
 
@@ -61,7 +68,7 @@ public class NoticeDto
             Publisher = dto.publishUserName,
             PublishDepart = dto.publishUserDepart,
             CreateDate = dto.createDate,
-            PublishDate = dto.publishDate1,
+            PublishDate = dto.publishDate1 ?? dto.publishDate,
             TypeName = dto.typeName,
             ReadCount = dto.readCount,
         };

@@ -54,5 +54,5 @@ public static partial class Helper
     }
 
     [GeneratedRegex(@"<option\s+value=""(?<value>[^""]*)""\s*>(?<text>.*?)</option>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
-    public static partial Regex Notice_CategoriesRegex();
+    public static partial Regex NoticeCategoriesRegex();
 }

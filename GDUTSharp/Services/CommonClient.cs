@@ -81,6 +81,10 @@ public class CommonClient(
                         throw new InvalidOperationException($"检测到跨域重定向 {oldUri.AbsoluteUri} -> {newUri.AbsoluteUri}");
                     }
                 }
+                else
+                {
+                    Log.Redirect(_logger, oldUri.AbsolutePath, newUri.AbsolutePath);
+                }
                 var newRequest = await CreateRedirectRequest(currentRequest, newUri, response.StatusCode, token);
                 response.Dispose();
                 if (!ReferenceEquals(currentRequest, request))
