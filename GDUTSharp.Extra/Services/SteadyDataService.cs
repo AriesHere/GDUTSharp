@@ -19,18 +19,13 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
 {
     public async override Task<HttpResponseMessage?> LoginAndAuth(
         CookieContainer cookies,
-        AuthServices? service = null,
+        AuthServices service = AuthServices.AuthServer,
         LoginInfo? loginInfo = null,
         CancellationToken token = default)
     {
         try
         {
-            var url = service switch
-            {
-                AuthServices.AcademicAffairs => GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
-                AuthServices.Library => GSConst.AuthServerAuth + GSConst.LibraryLogin,
-                _ => GSConst.AuthServerLogin,
-            };
+            var url = GenUrl(service);
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
             HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
 
@@ -69,11 +64,7 @@ public class SteadyAuthService(ILogger<SteadyAuthService> logger, ICommonClient 
                     formData["password"] = Convert.ToBase64String(
                         _security.Encrypt(base.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
 
-                    using var request2 = ICommonClient.CreateRequest(
-                        HttpMethod.Post,
-                        GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
-                        formData,
-                        GSConst.AcademicAffairsUnderLogin);
+                    using var request2 = ICommonClient.CreateRequest(HttpMethod.Post, url, formData);
                     response = await _client.SendAsync(cookies, request2, true, token);
                 }
             }

@@ -28,7 +28,7 @@ public class EhallService(ILogger<EhallService> logger, ICommonClient client, IA
             response.Dispose();
             response = await _auth.LoginAndAuth(cookies, AuthServices.Ehall, loginInfo, token);
             if (response is null) return false;
-            return (await response.Content.ReadAsStringAsync(token)).StartsWith("<!DOCTYPE html>\n<html lang=\"en\">");
+            return (await response.Content.ReadAsStringAsync(token)).StartsWith("<!DOCTYPE html><html lang=\"zh\" id=\"html-content\">");
         }
         catch (Exception e)
         {

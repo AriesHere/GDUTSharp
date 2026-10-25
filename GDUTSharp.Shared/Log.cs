@@ -43,7 +43,6 @@ public static partial class Log
     [LoggerMessage(LogLevel.Information, "正在登录")]
     public static partial void Login(ILogger logger);
 
-    /// <summary>正在重定向 {source} -> {target}</summary>
     [LoggerMessage(LogLevel.Trace, "正在重定向 {source} -> {target}")]
     public static partial void Redirect(ILogger logger, string? source, string? target);
 

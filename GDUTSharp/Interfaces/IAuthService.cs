@@ -25,7 +25,7 @@ public interface IAuthService
     /// </remarks>
     public Task<HttpResponseMessage?> LoginAndAuth(
         CookieContainer cookies,
-        AuthServices? service = null,
+        AuthServices service = AuthServices.AuthServer,
         LoginInfo ? loginInfo = null,
         CancellationToken token = default);
 

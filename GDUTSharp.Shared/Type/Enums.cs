@@ -12,6 +12,7 @@ public enum LoginType
 /// <summary>支持统一认证中心认证的服务</summary>
 public enum AuthServices
 {
+    AuthServer,
     AcademicAffairs,
     Library,
     Ehall,

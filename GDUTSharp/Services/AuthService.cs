@@ -49,27 +49,29 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
 
     #endregion
 
+    protected virtual string GenUrl(AuthServices service) => service switch
+    {
+        AuthServices.AcademicAffairs => GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
+        AuthServices.Library => GSConst.AuthServerAuth + GSConst.LibraryLogin,
+        AuthServices.Ehall => GSConst.AuthServerAuth + GSConst.EhallLogin,
+        AuthServices.AuthServer or _ => GSConst.AuthServerLogin,
+    };
+
     public virtual async Task<HttpResponseMessage?> LoginAndAuth(
         CookieContainer cookies,
-        AuthServices? service = null,
-        LoginInfo ? loginInfo = null,
+        AuthServices service = AuthServices.AuthServer,
+        LoginInfo? loginInfo = null,
         CancellationToken token = default)
     {
         HttpRequestMessage? request = null;
         try
         {
-            var url = service switch
-            {
-                AuthServices.AcademicAffairs => GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
-                AuthServices.Library => GSConst.AuthServerAuth + GSConst.LibraryLogin,
-                AuthServices.Ehall => GSConst.AuthServerAuth + GSConst.EhallLogin,
-                _ => GSConst.AuthServerLogin,
-            };
+            var url = this.GenUrl(service);
             request = new HttpRequestMessage(HttpMethod.Post, url);
             HttpResponseMessage response = await _client.SendAsync(cookies, request, true, token);
             request.Dispose();
 
-            if (response.StatusCode == HttpStatusCode.OK)   // 需要登录
+            if ((await response.Content.ReadAsStringAsync(token)).StartsWith("﻿﻿<!DOCTYPE html><html class=\"root-main\">"))   // 需要登录
             {
                 if (loginInfo is null)
                 {
@@ -97,11 +99,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                     formData["lt"] = "";
                     formData["execution"] = execution;
 
-                    request = ICommonClient.CreateRequest(
-                        HttpMethod.Post,
-                        GSConst.AuthServerAuth + GSConst.AcademicAffairsUnderLogin,
-                        formData,
-                        GSConst.AcademicAffairsUnderLogin);
+                    request = ICommonClient.CreateRequest(HttpMethod.Post, url, formData);
                     response = await _client.SendAsync(cookies, request, true, token);
                 }
             }

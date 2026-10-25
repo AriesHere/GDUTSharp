@@ -65,7 +65,7 @@ public class CommonClient(
                 if (redirectCount > _maxRedirect)
                 {
                     response.Dispose();
-                    throw new HttpRequestException($"重定向次数超过限制 ({_maxRedirect})，目标 URI: {request.RequestUri}");
+                    throw new HttpRequestException($"重定向次数超过限制 ({_maxRedirect})，源 URI: {request.RequestUri}，当前 URI：{currentRequest.RequestUri}，目标 URI：{response.Headers.Location}");
                 }
                 var oldUri = currentRequest.RequestUri!;
                 var newUri = ResolveLocation(oldUri, response.Headers.Location);
@@ -113,7 +113,10 @@ public class CommonClient(
     protected static async Task<HttpRequestMessage> CreateRedirectRequest(HttpRequestMessage previousRequest, Uri newUri, HttpStatusCode redirectStatus, CancellationToken token)
     {
         var method = previousRequest.Method;
-        if (redirectStatus == HttpStatusCode.SeeOther && method != HttpMethod.Get)
+        if (redirectStatus is HttpStatusCode.MovedPermanently
+            or HttpStatusCode.Redirect
+            or HttpStatusCode.SeeOther
+            && method != HttpMethod.Get)
         {
             method = HttpMethod.Get;
         }
