@@ -41,23 +41,14 @@ GDUTSharp.Extra:
 ## 使用示例  
 ```C#
 IHost AppHost = Host.CreateDefaultBuilder()
-    .ConfigureServices((context, services) =>
-    {
-        services.AddSingleton<IAuthService, AuthService>();
-        services.AddSingleton<IAcademicAffairsService, AcademicAffairsService>();
-        services.AddCommonClient(context.Configuration);
-    })
+    .ConfigureServices((context, services) => services.AddGDUTSharp(context.Configuration))
     .Build();
 AppHost.Start();
-
 LoginInfo testLoginInfo = new() { UserName = "", Password = "" };
-var logger = AppHost.Services.GetRequiredService<ILogger<Program>>();
 var cookies = new CookieContainer();
 var jxfw = AppHost.Services.GetRequiredService<IAcademicAffairsService>();
-var r = await jxfw.Login(cookies, testLoginInfo); // 自行处理登录失败时的情况
-logger.LogCritical("登录结果:{Result}", r);
 var term = jxfw.GetTerm(cookies).Result;    // 获取学期
-if (term is not null && await jxfw.GetLessons(cookies, term) is { } lessons)
+if (term is not null && await jxfw.GetLessons(cookies, term) is { } lessons)// 获取课程
 {
     // 以下是 GDUTSharp.Extra 的功能之一：导出课程为 iCalendar 文件以便于导入其它日历程序中
     var opt = new ICalConvertOptions<Lesson>()
