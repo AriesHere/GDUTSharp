@@ -85,8 +85,6 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                     string html = await response.Content.ReadAsStringAsync(token);
                     response.Dispose();
 
-                    // 这里采用了相当激进的优化，如果校方改东西了，可能会出错。如果不希望这样，
-                    // 请使用 GDUTSharp.Extra.SteadyAuthService 中的 LoginAndAuth 方法
                     var pwdEncryptSalt = html.Extract("id=\"pwdEncryptSalt\" value=\"", '"', out var cur);
                     var execution = html.Extract("name=\"execution\" value=\"", '"', out _, cur);
                     formData["username"] = loginInfo.UserName;

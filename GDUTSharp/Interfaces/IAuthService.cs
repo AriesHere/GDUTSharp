@@ -8,8 +8,9 @@ namespace GDUTSharp.Interfaces;
 /// 仅支持统一认证中心认证的系统可以使用本接口进行认证。
 /// <para>
 /// 登录方式：<br/>
-/// 先调用 <see cref="CheckNeedCaptcha"/> 检查是否需要验证码，如果需要，则调用 <see cref="GetCaptcha"/> 获取验证码，
-/// 然后调用 <see cref="SubmitCaptcha"/> 提交验证码并检查是否验证通过。验证通过后，再调用 <see cref="LoginAndAuth"/>
+/// 先调用 <see cref="CheckNeedCaptcha"/> 检查是否需要人机验证，如果需要，则调用 <see cref="GetCaptcha"/> 获取人机验证信
+/// 息（人机验证方法见 <see cref="AuthServerCaptcha"/>），然后调用 <see cref="SubmitCaptcha"/> 提交人机验证并检查是否验
+/// 证通过。验证通过后，再调用 <see cref="LoginAndAuth"/>
 /// 进行登录和认证。
 /// </para>
 /// </remarks>
@@ -35,14 +36,14 @@ public interface IAuthService
     public Task<bool> Logout(CookieContainer cookies, CancellationToken token = default);
 
     /// <summary>
-    /// 检查是否需要验证码
+    /// 检查是否需要人机验证
     /// </summary>
     /// <param name="username">学号</param>
     public Task<bool> CheckNeedCaptcha(CookieContainer cookies, string username, CancellationToken token = default);
 
-    /// <summary>获取验证码</summary>
+    /// <summary>获取人机验证信息</summary>
     public Task<AuthServerCaptcha?> GetCaptcha(CookieContainer cookies, CancellationToken token = default);
 
-    /// <summary>向统一认证中心服务提交验证码并检查是否验证通过</summary>
+    /// <summary>向统一认证中心服务提交人机验证数据并检查是否验证通过</summary>
     public Task<bool> SubmitCaptcha(CookieContainer cookies, SliderPayloadDto payload, byte[] safeSecure, CancellationToken token = default);
 }

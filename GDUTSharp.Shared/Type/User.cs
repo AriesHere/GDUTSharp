@@ -12,7 +12,7 @@ namespace GDUTSharp.Shared.Type
         public string Captcha { get; set; } = string.Empty;
     }
 
-    /// <summary>统一认证中心验证码（滑块验证码）</summary>
+    /// <summary>统一认证中心人机验证（滑块验证）</summary>
     /// <remarks><see cref="SmallImage"/> 和 <see cref="BigImage"/> 都是 png 文件</remarks>
     [OverrideToString]
     public partial class AuthServerCaptcha
