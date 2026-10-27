@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace GDUTSharp.SourceGen.Generators
 {
     [Generator]
-    public class Gen_OverrideToString : IIncrementalGenerator
+    public class OverrideToString : IIncrementalGenerator
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {

@@ -3,11 +3,13 @@ using System.Net.Http.Headers;
 using System.Text;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Attributes;
 using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
+[RegisterToDI(nameof(IEhallService))]
 public class EhallService(ILogger<EhallService> logger, ICommonClient client, IAuthService auth) : IEhallService
 {
     protected ILogger<EhallService> _logger = logger;

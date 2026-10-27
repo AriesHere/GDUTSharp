@@ -1,6 +1,8 @@
-﻿namespace GDUTSharp.Shared.Type;
+﻿using GDUTSharp.Shared.Attributes;
 
-[Attributes.OverrideToString]
+namespace GDUTSharp.Shared.Type;
+
+[OverrideToString]
 public partial class BookInfo
 {
     public int RecordId { get; set; } = 0;

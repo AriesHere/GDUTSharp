@@ -4,12 +4,14 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Attributes;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
+[RegisterToDI(nameof(IAuthService))]
 public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISecurityService security) : IAuthService
 {
     protected readonly ILogger<AuthService> _logger = logger;

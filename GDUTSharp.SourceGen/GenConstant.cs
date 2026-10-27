@@ -5,5 +5,5 @@ public class GenConstant
     public const string IEnumerableT = "System.Collections.Generic.IEnumerable`1";
     public const string IEnumerable = "System.Collections.Generic.IEnumerable";
     public const string OverrideToString = "GDUTSharp.Shared.Attributes.OverrideToStringAttribute";
-
+    public const string RegisterToDI = "GDUTSharp.Shared.Attributes.RegisterToDIAttribute";
 }

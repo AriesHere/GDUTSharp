@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json.Serialization.Metadata;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Attributes;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using GDUTSharp.Shared.Type.DTO;
@@ -25,6 +26,7 @@ public class AcademicAffairsServiceOptions
 /// <summary>
 /// 教学服务系统
 /// </summary>
+[RegisterToDI(nameof(IAcademicAffairsService))]
 public class AcademicAffairsService(
     IOptions<AcademicAffairsServiceOptions> options,
     ILogger<AcademicAffairsService> logger,

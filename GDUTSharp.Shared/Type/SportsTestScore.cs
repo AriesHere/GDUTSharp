@@ -1,10 +1,12 @@
-﻿namespace GDUTSharp.Shared.Type;
+﻿using GDUTSharp.Shared.Attributes;
+
+namespace GDUTSharp.Shared.Type;
 
 /// <summary>体质测试成绩</summary>
 /// <remarks>
 /// 末尾为 _R 的是原始成绩，末尾为 _RS 的是原始得分，末尾为 _WS 的是加权得分<br/>。性别不同，需要测试的项目不同
 /// </remarks>
-[Attributes.OverrideToString]
+[OverrideToString]
 public partial class SportsTestScore
 {
     /// <summary>体质测试测试年份</summary>

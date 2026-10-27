@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\OverrideToStringAttriubte.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\RegisterToDIAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GSConst.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Json\AppJsonContext.cs" />

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using GDUTSharp.Shared.Attributes;
+using System.Collections;
 
 namespace GDUTSharp.Shared.Type;
 
@@ -24,7 +25,7 @@ public class NoticeCollection : IEnumerable<Notice>
 /// <remarks>
 /// 推荐使用 <see cref="NoticeCollection"/> 而不是 <see cref="List{T}"/>，因为前者能提供页信息
 /// </remarks>
-[Attributes.OverrideToString]
+[OverrideToString]
 public partial class Notice
 {
     public string Id { get; set; } = string.Empty;

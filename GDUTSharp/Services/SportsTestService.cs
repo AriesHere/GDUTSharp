@@ -2,11 +2,13 @@
 using System.Security.Cryptography;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Attributes;
 using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
+[RegisterToDI(nameof(ISportsTestService))]
 public class SportsTestService(ILogger<SportsTestService> logger, ICommonClient client, ISecurityService security) : ISportsTestService
 {
     protected ILogger<SportsTestService> _logger = logger;

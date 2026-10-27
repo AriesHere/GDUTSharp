@@ -1,50 +1,51 @@
 ﻿using System.Security.Cryptography;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Attributes;
 using Microsoft.Extensions.Logging;
 
-namespace GDUTSharp.Services
+namespace GDUTSharp.Services;
+
+[RegisterToDI(nameof(ISecurityService))]
+public partial class AesCbcService(ILogger<AesCbcService> logger) : ISecurityService
 {
-    public partial class AesCbcService(ILogger<AesCbcService> logger) : ISecurityService
+    private readonly ILogger<AesCbcService> _logger = logger;
+
+    public virtual byte[] Encrypt(byte[] plaintext, byte[] key, byte[] iv)
     {
-        private readonly ILogger<AesCbcService> _logger = logger;
-
-        public virtual byte[] Encrypt(byte[] plaintext, byte[] key, byte[] iv)
+        try
         {
-            try
-            {
-                using Aes aes = Aes.Create();
-                aes.Key = key;
-                aes.IV = iv;
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-                using ICryptoTransform encryptor = aes.CreateEncryptor();
-                return encryptor.TransformFinalBlock(plaintext, 0, plaintext.Length);
-            }
-            catch (Exception e)
-            {
-                Log.TryFailed(_logger, "加密", e);
-                throw;
-            }
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            using ICryptoTransform encryptor = aes.CreateEncryptor();
+            return encryptor.TransformFinalBlock(plaintext, 0, plaintext.Length);
         }
-
-        public virtual byte[] Decrypt(byte[] cipherText, byte[] key, byte[] iv)
+        catch (Exception e)
         {
-            try
-            {
-                using Aes aes = Aes.Create();
-                aes.Key = key;
-                aes.IV = iv;
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-                using ICryptoTransform decryptor = aes.CreateDecryptor();
-                return decryptor.TransformFinalBlock(cipherText, 0, cipherText.Length);
-            }
-            catch (Exception e)
-            {
-                Log.TryFailed(_logger, "解密", e);
-                throw;
-            }
+            Log.TryFailed(_logger, "加密", e);
+            throw;
+        }
+    }
+
+    public virtual byte[] Decrypt(byte[] cipherText, byte[] key, byte[] iv)
+    {
+        try
+        {
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            using ICryptoTransform decryptor = aes.CreateDecryptor();
+            return decryptor.TransformFinalBlock(cipherText, 0, cipherText.Length);
+        }
+        catch (Exception e)
+        {
+            Log.TryFailed(_logger, "解密", e);
+            throw;
         }
     }
 }

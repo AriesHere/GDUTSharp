@@ -4,12 +4,14 @@ using System.Net.Http.Json;
 using System.Text;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Attributes;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
+[RegisterToDI(nameof(ILibraryService))]
 public class LibraryService(ILogger<LibraryService> logger, ICommonClient client, IAuthService authService) : ILibraryService
 {
     protected readonly ILogger<LibraryService> _logger = logger;

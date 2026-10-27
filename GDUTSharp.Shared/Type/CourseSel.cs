@@ -1,6 +1,8 @@
-﻿namespace GDUTSharp.Shared.Type;
+﻿using GDUTSharp.Shared.Attributes;
 
-[Attributes.OverrideToString("CourseSelection")]
+namespace GDUTSharp.Shared.Type;
+
+[OverrideToString("CourseSelection")]
 public partial class CourseSel
 {
     /// <summary>课程任务代码</summary>

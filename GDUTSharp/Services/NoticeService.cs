@@ -2,12 +2,14 @@
 using System.Net.Http.Json;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
+using GDUTSharp.Shared.Attributes;
 using GDUTSharp.Shared.Json;
 using GDUTSharp.Shared.Type;
 using Microsoft.Extensions.Logging;
 
 namespace GDUTSharp.Services;
 
+[RegisterToDI(nameof(INoticeService))]
 public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient client) : INoticeService
 {
     protected ILogger<NoticeService> _logger = logger;

@@ -1,6 +1,8 @@
-﻿namespace GDUTSharp.Shared.Type;
+﻿using GDUTSharp.Shared.Attributes;
 
-[Attributes.OverrideToString]
+namespace GDUTSharp.Shared.Type;
+
+[OverrideToString]
 public partial class GradingExamScore
 {
     /// <summary>学年学期名称，如“2026秋季”</summary>

@@ -1,6 +1,8 @@
-﻿namespace GDUTSharp.Shared.Type;
+﻿using GDUTSharp.Shared.Attributes;
 
-[Attributes.OverrideToString]
+namespace GDUTSharp.Shared.Type;
+
+[OverrideToString]
 public partial class Lesson
 {
     /// <summary>课程名称</summary>

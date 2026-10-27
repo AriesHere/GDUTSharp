@@ -13,7 +13,10 @@
 /// </code>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false, AllowMultiple = false)]
-public sealed class OverrideToStringAttribute(string? displayName = null) : Attribute
+public sealed class OverrideToStringAttribute : Attribute
 {
-    public string? DisplayName { get; set; } = displayName;
+    public OverrideToStringAttribute(string? displayName = null)
+    {
+        _ = displayName;
+    }
 }
