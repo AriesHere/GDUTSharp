@@ -30,3 +30,12 @@ public enum LessonsFileType
     CSV,
     TEXT,
 }
+
+/// <summary>图书馆借阅查询类型</summary>
+/// <remarks>仅用于查询当前借阅和借阅历史</remarks>
+public enum LoanSearchType
+{
+    Title = 1,
+    Author = 2,
+    ISBN = 3,
+}

@@ -11,12 +11,36 @@ namespace GDUTSharp.Interfaces;
 /// </remarks>
 public interface ILibraryService
 {
+    public const int DefaultPageSize = 10;
+
     /// <summary>登录</summary>
     /// <returns>返回是否登录成功以及登录后获取的 JwtOpacAuth (后者在某些功能需要用到，如 <see cref="GetDailyRecommend"/>)</returns>
     public Task<(bool IsSuccess, string? JwtOpacAuth)> Login(CookieContainer cookies, LoginInfo? loginInfo = null, CancellationToken token = default);
 
-    /// <summary>借阅列表</summary>
-    public Task<List<BookInfo>?> GetBorrowedBooks(CookieContainer cookies, CancellationToken token = default);
+    /// <summary>当前借阅列表</summary>
+    /// <remarks>
+    /// <paramref name="search"/> 为 null 时不会进行搜索，<paramref name="loanDate"/>
+    /// 是借阅日期的日期区间，若借阅日期不在此区间内而归还日期在，则仍然会视作不在此区间内
+    /// </remarks>
+    public Task<List<BookInfo>?> GetLoanList(
+        CookieContainer cookies,
+        int pageNumber,
+        int pageSize = DefaultPageSize,
+        (LoanSearchType SearchType, string SearchContent)? search = null,
+        (DateOnly Start, DateOnly End)? loanDate = null,
+        CancellationToken token = default);
+
+    /// <summary>借阅历史</summary>
+    /// <remarks>
+    /// 参数含义请参见 <see cref="ILibraryService.GetLoanList"/>
+    /// </remarks>
+    public Task<List<BookInfo>?> GetLoanHistory(
+        CookieContainer cookies,
+        int pageNumber,
+        int pageSize = DefaultPageSize,
+        (LoanSearchType SearchType, string SearchContent)? search = null,
+        (DateOnly Start, DateOnly End)? loanDate = null,
+        CancellationToken token = default);
 
     /// <summary>每日推荐</summary>
     /// <remarks>如果 <paramref name="jwtOpacAuth"/> 为 null，则返回与用户无关的推荐，否则是与用户相关的推荐（暂无证据表明它是基于什么推荐的）</remarks>

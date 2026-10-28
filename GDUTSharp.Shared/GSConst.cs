@@ -80,6 +80,9 @@ public static class GSConst
     /// <summary>图书馆借阅列表</summary>
     public const string LibraryLoanList = "https://opac.gdut.edu.cn/find/loanInfo/loanList";
 
+    /// <summary>图书馆借阅列表</summary>
+    public const string LibraryLoanHistory = "https://opac.gdut.edu.cn/find/loanInfo/loanHistoryList";
+
     /// <summary>图书馆每日推荐</summary>
     public const string LibraryDalyRecommend = "https://opac.gdut.edu.cn/find/subscribe/dailyRecommend?";
 

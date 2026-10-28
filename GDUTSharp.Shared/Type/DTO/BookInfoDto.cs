@@ -86,10 +86,13 @@ public class BookInfoDto
     public string publishYear { get; set; } = string.Empty;
 
     /// <summary>借阅日期</summary>
-    public string loanDate { get; set; } = string.Empty;
+    public DateOnly? loanDate { get; set; }
+
+    /// <summary>实还日期</summary>
+    public DateOnly? returnDate { get; set; }
 
     /// <summary>应还日期</summary>
-    public string normReturnDate { get; set; } = string.Empty;
+    public DateOnly? normReturnDate { get; set; }
 
     /// <summary>借阅馆藏地</summary>
     public string locationName { get; set; } = string.Empty;
@@ -106,25 +109,22 @@ public class BookInfoDto
     /// <summary>索书号</summary>
     public string callNo { get; set; } = string.Empty;
 
-    public static implicit operator BookInfo(BookInfoDto dto)
-    {
-        var r = new BookInfo
-        {
+    public static implicit operator BookInfo(BookInfoDto dto) =>
+        new() {
             RecordId = dto.recordId,
             Title = dto.title,
             Author = dto.author,
             Publisher = dto.publisher,
             ISBN = dto.isbn,
             PublishYear = dto.publishYear,
+            LoanDate = dto.loanDate,
+            ReturnDate = dto.returnDate,
+            NormReturnDate = dto.normReturnDate,
             LocationName = dto.locationName,
             Barcode = dto.barcode,
             PropNo = dto.propNo,
             Index = dto.callNo,
         };
-        if (!string.IsNullOrWhiteSpace(dto.loanDate)) r.LoanDate = DateOnly.Parse(dto.loanDate);
-        if (!string.IsNullOrWhiteSpace(dto.normReturnDate)) r.NormReturnDate = DateOnly.Parse(dto.normReturnDate);
-        return r;
-    }
 }
 
 #pragma warning restore IDE1006 // Naming Styles

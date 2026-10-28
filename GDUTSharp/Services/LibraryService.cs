@@ -18,6 +18,9 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
 
+    /// <summary>将 <see cref="DateOnly"/> 转换为 "yyyy-MM-dd" 的形式（包含括号）</summary>
+    protected static string DateOnlyString(DateOnly? d) => d is { } nd ? $"\"{nd.Year:D4}-{nd.Month:D2}-{nd.Day:D2}\"" : "\"\"";
+
     public virtual async Task<(bool IsSuccess, string? JwtOpacAuth)> Login(
         CookieContainer cookies,
         LoginInfo? loginInfo = null,
@@ -73,11 +76,19 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
         }
     }
 
-    public virtual async Task<List<BookInfo>?> GetBorrowedBooks(CookieContainer cookies, CancellationToken token = default)
+    public virtual async Task<List<BookInfo>?> GetLoanList(
+        CookieContainer cookies,
+        int pageNumber,
+        int pageSize = ILibraryService.DefaultPageSize,
+        (LoanSearchType SearchType, string SearchContent)? search = null,
+        (DateOnly Start, DateOnly End)? loanDate = null,
+        CancellationToken token = default)
     {
         try
         {
-            var requestContent = """{"page":1,"rows":10,"searchType":1,"searchContent":"","sortType":0,"startDate":null,"endDate":null}""";
+            var (searchType, searchContent) = search is null ? (1, "") : ((int)search.Value.SearchType, search.Value.SearchContent);
+            var (start, end) = (DateOnlyString(loanDate?.Start), DateOnlyString(loanDate?.End));
+            var requestContent = $$"""{"page":{{pageNumber}},"rows":{{pageSize}},"searchType":{{searchType}},"searchContent":"{{searchContent}}","sortType":0,"startDate":{{start}},"endDate":{{end}}}""";
             using var request = new HttpRequestMessage(HttpMethod.Post, GSConst.LibraryLoanList)
             {
                 Content = new StringContent(requestContent, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
@@ -88,7 +99,35 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
         }
         catch (Exception e)
         {
-            Log.TryFailed(_logger, "请求图书借阅列表", e);
+            Log.TryFailed(_logger, "请求当前借阅列表", e);
+            return null;
+        }
+    }
+
+    public virtual async Task<List<BookInfo>?> GetLoanHistory(
+        CookieContainer cookies,
+        int pageNumber,
+        int pageSize = ILibraryService.DefaultPageSize,
+        (LoanSearchType SearchType, string SearchContent)? search = null,
+        (DateOnly Start, DateOnly End)? loanDate = null,
+        CancellationToken token = default)
+    {
+        try
+        {
+            var (searchType, searchContent) = search is null ? (1, "") : ((int)search.Value.SearchType, search.Value.SearchContent);
+            var (start, end) = (DateOnlyString(loanDate?.Start), DateOnlyString(loanDate?.End));
+            var requestContent = $$"""{"page":{{pageNumber}},"rows":{{pageSize}},"searchType":{{searchType}},"searchContent":"{{searchContent}}","sortType":0,"startDate":{{start}},"endDate":{{end}}}""";
+            using var request = new HttpRequestMessage(HttpMethod.Post, GSConst.LibraryLoanHistory)
+            {
+                Content = new StringContent(requestContent, Encoding.UTF8, new MediaTypeHeaderValue("application/json")),
+            };
+            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
+            var result = await response.Content.ReadFromJsonAsync(AppJsonContext.Context.BorrowedBookDtoCollection, token);
+            return result;
+        }
+        catch (Exception e)
+        {
+            Log.TryFailed(_logger, "请求借阅历史", e);
             return null;
         }
     }

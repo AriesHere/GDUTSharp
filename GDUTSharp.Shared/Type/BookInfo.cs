@@ -18,10 +18,13 @@ public partial class BookInfo
     public string PublishYear { get; set; } = string.Empty;
 
     /// <summary>借阅日期</summary>
-    public DateOnly LoanDate { get; set; } = DateOnly.MinValue;
+    public DateOnly? LoanDate { get; set; }
 
     /// <summary>应还日期</summary>
-    public DateOnly NormReturnDate { get; set; } = DateOnly.MinValue;
+    public DateOnly? NormReturnDate { get; set; }
+
+    /// <summary>实还日期</summary>
+    public DateOnly? ReturnDate { get; set; }
 
     /// <summary>借阅馆藏地</summary>
     public string LocationName { get; set; } = string.Empty;
