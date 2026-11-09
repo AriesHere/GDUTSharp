@@ -59,6 +59,65 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         AuthServices.AuthServer or _ => GSConst.AuthServerLogin,
     };
 
+    protected async virtual Task<Dictionary<string, string>> ProcessLoginContent(HttpResponseMessage response, LoginInfo loginInfo, CancellationToken token = default)
+    {
+        var formData = new Dictionary<string, string>();
+        string html = await response.Content.ReadAsStringAsync(token);
+        response.Dispose();
+
+        var pwdEncryptSalt = html.Extract("id=\"pwdEncryptSalt\" value=\"", '"', out var cur);
+        var execution = html.Extract("name=\"execution\" value=\"", '"', out _, cur);
+        formData["username"] = loginInfo.UserName;
+        formData["password"] = Convert.ToBase64String(
+            _security.Encrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
+        formData["captcha"] = "";
+        formData["_eventId"] = "submit";
+        formData["cllt"] = "userNameLogin";
+        formData["dllt"] = "generalLogin";
+        formData["lt"] = "";
+        formData["execution"] = execution;
+        return formData;
+    }
+
+    public virtual async Task<bool> Login(CookieContainer cookies, LoginInfo loginInfo, CancellationToken token = default)
+    {
+        HttpRequestMessage? request = null;
+        try
+        {
+            request = new HttpRequestMessage(HttpMethod.Post, GSConst.AuthServerLogin);
+            HttpResponseMessage response = await _client.SendAsync(cookies, request, true, token);
+            request.Dispose();
+
+            using var reader = new StreamReader(response.Content.ReadAsStream(token));
+            reader.ReadLine();  // skip
+            if (reader.ReadLine()?.StartsWith("﻿﻿<!-- 移动端 -->") == true)   // 需要登录
+            {
+                Log.Login(_logger);
+                var formData = await ProcessLoginContent(response, loginInfo, token);
+                request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.AuthServerLogin, formData);
+                response = await _client.SendAsync(cookies, request, true, token);
+
+                using var reader1 = new StreamReader(response.Content.ReadAsStream(token));
+                reader1.ReadLine();  // skip
+                if (reader1.ReadLine()?.StartsWith("<!-- 移动端 -->") == true)
+                {
+                    Log.LoginFailed(_logger, null);
+                    return false;
+                }
+            }
+            return true;
+        }
+        catch (Exception e)
+        {
+            Log.TryFailed(_logger, "登录", e);
+            return false;
+        }
+        finally
+        {
+            request?.Dispose();
+        }
+    }
+
     public virtual async Task<HttpResponseMessage?> LoginAndAuth(
         CookieContainer cookies,
         AuthServices service = AuthServices.AuthServer,
@@ -73,7 +132,9 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
             HttpResponseMessage response = await _client.SendAsync(cookies, request, true, token);
             request.Dispose();
 
-            if ((await response.Content.ReadAsStringAsync(token)).StartsWith("﻿﻿<!DOCTYPE html><html class=\"root-main\">"))   // 需要登录
+            using var reader = new StreamReader(response.Content.ReadAsStream(token));
+            reader.ReadLine();  // skip
+            if (reader.ReadLine()?.StartsWith("﻿﻿<!-- 移动端 -->") == true)   // 需要登录
             {
                 if (loginInfo is null)
                 {
@@ -83,22 +144,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
                 else
                 {
                     Log.LoginAndAuth(_logger);
-                    var formData = new Dictionary<string, string>();
-                    string html = await response.Content.ReadAsStringAsync(token);
-                    response.Dispose();
-
-                    var pwdEncryptSalt = html.Extract("id=\"pwdEncryptSalt\" value=\"", '"', out var cur);
-                    var execution = html.Extract("name=\"execution\" value=\"", '"', out _, cur);
-                    formData["username"] = loginInfo.UserName;
-                    formData["password"] = Convert.ToBase64String(
-                        _security.Encrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
-                    formData["captcha"] = "";
-                    formData["_eventId"] = "submit";
-                    formData["cllt"] = "userNameLogin";
-                    formData["dllt"] = "generalLogin";
-                    formData["lt"] = "";
-                    formData["execution"] = execution;
-
+                    var formData = await ProcessLoginContent(response, loginInfo, token);
                     request = ICommonClient.CreateRequest(HttpMethod.Post, url, formData);
                     response = await _client.SendAsync(cookies, request, true, token);
                 }

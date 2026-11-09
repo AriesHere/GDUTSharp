@@ -10,13 +10,18 @@ namespace GDUTSharp.Interfaces;
 /// 登录方式：<br/>
 /// 先调用 <see cref="CheckNeedCaptcha"/> 检查是否需要人机验证，如果需要，则调用 <see cref="GetCaptcha"/> 获取人机验证信
 /// 息（人机验证方法见 <see cref="AuthServerCaptcha"/>），然后调用 <see cref="SubmitCaptcha"/> 提交人机验证并检查是否验
-/// 证通过。验证通过后，再调用 <see cref="LoginAndAuth"/>
+/// 证通过。验证通过后，再根据实际情况调用 <see cref="LoginAndAuth"/> 或 <see cref="Login"/>。
 /// 进行登录和认证。
 /// </para>
 /// </remarks>
 public interface IAuthService
 {
+    /// <summary>统一认证中心登录</summary>
+    /// <remarks>这不是必要的，但若想在调用 <see cref="LoginAndAuth"/> 前就登录统一认证中心，可以考虑先调用本方法。</remarks>
+    public Task<bool> Login(CookieContainer cookies, LoginInfo loginInfo, CancellationToken token = default);
+
     /// <remarks>
+    /// <para><b>非必要请勿使用，该方法已由其它 GDUTSharp 服务调用</b></para>
     /// 如果能保证已经处于登录成功状态，则 <paramref name="loginInfo"/> 可以为 null，
     /// 若无法保证，请务必设置有效的 <paramref name="loginInfo"/>。
     /// <br/>

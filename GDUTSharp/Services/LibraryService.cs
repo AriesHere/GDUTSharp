@@ -18,7 +18,7 @@ public class LibraryService(ILogger<LibraryService> logger, ICommonClient client
     protected readonly ICommonClient _client = client;
     protected readonly IAuthService _authService = authService;
 
-    /// <summary>将 <see cref="DateOnly"/> 转换为 "yyyy-MM-dd" 的形式（包含括号）</summary>
+    /// <summary>将 <see cref="DateOnly"/> 转换为 "yyyy-MM-dd" 的形式（包含双引号）</summary>
     protected static string DateOnlyString(DateOnly? d) => d is { } nd ? $"\"{nd.Year:D4}-{nd.Month:D2}-{nd.Day:D2}\"" : "\"\"";
 
     public virtual async Task<(bool IsSuccess, string? JwtOpacAuth)> Login(
