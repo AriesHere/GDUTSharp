@@ -10,7 +10,7 @@ public interface ICommonClient
     /// 除非有必要，否则不应该将其设置为 <see cref="true"/>
     /// </remarks>
     public Task<HttpResponseMessage> SendAsync(
-        CookieContainer cookies,
+        CookieContainer? cookies,
         HttpRequestMessage request,
         bool allowCrossDomainRedirect = false,
         CancellationToken cancellationToken = default);

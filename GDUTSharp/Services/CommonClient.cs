@@ -22,7 +22,7 @@ public class CommonClient(
     protected readonly int _maxRedirect = options.Value.MaxRedirect;
 
     public virtual async Task<HttpResponseMessage> SendAsync(
-        CookieContainer cookies,
+        CookieContainer? cookies,
         HttpRequestMessage request,
         bool allowCrossDomainRedirect = true,
         CancellationToken token = default)
@@ -35,25 +35,32 @@ public class CommonClient(
             var currentRequest = request;   // 用于在后文决定所有权以及是否需要 Dispose
             HttpResponseMessage response;
             var redirectCount = 0;
+            bool isCookiesNotNull = cookies is not null;
             while (true)
             {
-                var cookieHeader = cookies.GetCookieHeader(currentRequest.RequestUri!);
-                if (!string.IsNullOrEmpty(cookieHeader))
+                if (isCookiesNotNull)
                 {
-                    currentRequest.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
+                    var cookieHeader = cookies!.GetCookieHeader(currentRequest.RequestUri!);
+                    if (!string.IsNullOrEmpty(cookieHeader))
+                    {
+                        currentRequest.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
+                    }
                 }
                 response = await client.SendAsync(currentRequest, token);
-                if (response.Headers.TryGetValues("Set-Cookie", out var setCookieValues))
+                if (isCookiesNotNull)
                 {
-                    foreach (var cookieValue in setCookieValues)
+                    if (response.Headers.TryGetValues("Set-Cookie", out var setCookieValues))
                     {
-                        try
+                        foreach (var cookieValue in setCookieValues)
                         {
-                            cookies.SetCookies(currentRequest.RequestUri!, cookieValue);
-                        }
-                        catch (Exception e) when (e is CookieException or ArgumentException)
-                        {
-                            Log.IgnoreInvalidSetCookie(_logger, cookieValue, e);
+                            try
+                            {
+                                cookies!.SetCookies(currentRequest.RequestUri!, cookieValue);
+                            }
+                            catch (Exception e) when (e is CookieException or ArgumentException)
+                            {
+                                Log.IgnoreInvalidSetCookie(_logger, cookieValue, e);
+                            }
                         }
                     }
                 }
@@ -68,7 +75,7 @@ public class CommonClient(
                     throw new HttpRequestException($"重定向次数超过限制 ({_maxRedirect})，源 URI: {request.RequestUri}，当前 URI：{currentRequest.RequestUri}，目标 URI：{response.Headers.Location}");
                 }
                 var oldUri = currentRequest.RequestUri!;
-                var newUri = ResolveLocation(oldUri, response.Headers.Location);
+                var newUri = response.Headers.Location.IsAbsoluteUri? response.Headers.Location : new Uri(oldUri, response.Headers.Location);
                 if (Uri.Compare(oldUri, newUri, UriComponents.Host, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) != 0)
                 {
                     if (allowCrossDomainRedirect)
@@ -107,8 +114,6 @@ public class CommonClient(
             or HttpStatusCode.SeeOther                     // 303
             or HttpStatusCode.TemporaryRedirect            // 307
             or HttpStatusCode.PermanentRedirect;           // 308
-
-    protected static Uri ResolveLocation(Uri baseUri, Uri location) => location.IsAbsoluteUri ? location : new Uri(baseUri, location);
 
     protected static async Task<HttpRequestMessage> CreateRedirectRequest(HttpRequestMessage previousRequest, Uri newUri, HttpStatusCode redirectStatus, CancellationToken token)
     {
