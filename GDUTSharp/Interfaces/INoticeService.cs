@@ -17,23 +17,26 @@ public interface INoticeService
     /// 由于通知公文网的特殊性，无法单独获取各分类信息
     /// 必须先进行预处理，获得各分类的 id
     /// </remarks>
-    public Task<(Dictionary<string, string> MainCategories, Dictionary<string, string> SubCategories)?> Preprocess(CookieContainer cookies, CancellationToken token = default);
+    public Task<(Dictionary<string, string> MainCategories, Dictionary<string, string> SubCategories)?> Preprocess(CancellationToken token = default);
 
     /// <summary>
     /// 通过分类的 id 来获取对应分类的 NoticeCollection
     /// </summary>
+    /// <remarks><b>注意：</b>本方法中返回值的 <see cref="NoticeCollection.Total"/> 必定为 0</remarks>
     public Task<NoticeCollection?> GetNoticeCollection(
-        CookieContainer cookies,
         string id,
         int pageNumber,
         int pageSize = DefaultPageSize,
         CancellationToken token = default);
 
-    /// <remarks></remarks>
+    /// <remarks>
     /// <param name="departmentId">通过 <see cref="Preprocess(CookieContainer, CancellationToken)"/> 获取（副分类）</param>
     /// <param name="newsTypeId">通过 <see cref="Preprocess(CookieContainer, CancellationToken)"/> 获取（主分类）</param>
+    /// <para>
+    /// <b>注意：</b>本方法中返回值的 <see cref="NoticeCollection.Total"/> 为总查询到的条数
+    /// </para>
+    /// </remarks>
     public Task<NoticeCollection?> QueryNotices(
-        CookieContainer cookies,
         int pageNumber,
         int pageSize = DefaultPageSize,
         string? subject = null,

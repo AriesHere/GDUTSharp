@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using GDUTSharp.Interfaces;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Attributes;
@@ -15,36 +14,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
     protected ILogger<NoticeService> _logger = logger;
     protected ICommonClient _client = client;
 
-    /// <summary>生成用于请求分类通知的 <see cref="HttpRequestMessage"/></summary>
-    /// <remarks><paramref name="id"/> 通过 <see cref="Preprocess"/> 获取的 Dictionary 得到</remarks>
-    /// <param name="id">通过 <see cref="Preprocess"/> 获取的 Dictionary 得到</param>
-    protected virtual HttpRequestMessage CreateRequest(string id, int pageNumber, int pageSize)
-    {
-        var content = new Dictionary<string, string> {
-            { "managerMethod", "findListDatas" },
-            { "arguments", $$"""
-                [{
-                    "pageSize":"{{pageSize}}",
-                    "pageNo":{{pageNumber}},
-                    "listType":"1",
-                    "spaceType":"2",
-                    "spaceId":"",
-                    "typeId":"",
-                    "condition":"publishDepartment",
-                    "textfield1":"",
-                    "textfield2":"",
-                    "myNews":"",
-                    "fragmentId":"{{id}}",
-                    "ordinal":"0",
-                    "panelValue":"designated_value"
-                }]
-                """ },
-        };
-        return ICommonClient.CreateRequest(HttpMethod.Post, GSConst.NoticeGetCategories, content);
-    }
-
     public virtual async Task<(Dictionary<string, string> MainCategories, Dictionary<string, string> SubCategories)?> Preprocess(
-        CookieContainer cookies,
         CancellationToken token = default)
     {
         HttpRequestMessage? request = null;
@@ -52,28 +22,28 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         try
         {
             request = new(HttpMethod.Get, GSConst.NoticeBeforeLogin);
-            response = await _client.SendAsync(cookies, request, false, token);
+            response = await _client.SendAsync(null, request, false, token);
             request.Dispose();
             response.Dispose();
 
             request = new(HttpMethod.Get, GSConst.NoticeCategories);
-            response = await _client.SendAsync(cookies, request, false, token);
+            response = await _client.SendAsync(null, request, false, token);
             request.Dispose();
             var r = await response.Content.ReadAsStringAsync(token);
             response.Dispose();
-
+            
             var matches = Helper.NoticeCategoriesRegex().Matches(r);
-            if (matches.Count <= 4)
-            {
-                throw new ArgumentException("正则匹配失败");
-            }
             Dictionary<string, string> mainCategories = [];
             Dictionary<string, string> subCategories = [];
+            int emptyCount = 0;
             for (int i = 0; i < matches.Count; i++)
             {
                 if (string.IsNullOrWhiteSpace(matches[i].Groups["value"].Value))
+                {
+                    emptyCount++;
                     continue;
-                (i >= 2 ? mainCategories : subCategories).Add(matches[i].Groups["text"].Value, matches[i].Groups["value"].Value);
+                }
+                (emptyCount >= 2 ? mainCategories : subCategories).Add(matches[i].Groups["text"].Value, matches[i].Groups["value"].Value);
             }
 
             return (mainCategories, subCategories);
@@ -90,12 +60,16 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
         }
     }
     
-    public virtual async Task<NoticeCollection?> GetNoticeCollection(CookieContainer cookies, string id, int pageNumber, int pageSize, CancellationToken token = default)
+    public virtual async Task<NoticeCollection?> GetNoticeCollection(string id, int pageNumber, int pageSize, CancellationToken token = default)
     {
         try
         {
-            using HttpRequestMessage request = this.CreateRequest(id, pageNumber, pageSize);
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
+            var content = new Dictionary<string, string> {
+                { "managerMethod", "findListDatas" },
+                { "arguments", $$"""[{"pageSize":"{{pageSize}}","pageNo":{{pageNumber}},"listType":"1","spaceType":"2","spaceId":"","condition":"publishDepartment","textfield1":"","textfield2":"","fragmentId":"{{id}}","ordinal":"0","panelValue":"designated_value"}]""" },
+            };
+            using HttpRequestMessage request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.NoticeGetCategories, content);
+            using HttpResponseMessage response = await _client.SendAsync(null, request, false, token);
             return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.NoticeDtoCollection, token);
         }
         catch (Exception e)
@@ -106,7 +80,6 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
     }
 
     public async Task<NoticeCollection?> QueryNotices(
-        CookieContainer cookies,
         int pageNumber,
         int pageSize = INoticeService.DefaultPageSize,
         string? subject = null,
@@ -123,7 +96,7 @@ public partial class NoticeService(ILogger<NoticeService> logger, ICommonClient 
                 { "arguments", $$"""[{"page":{{pageNumber}},"size":{{pageSize}}},{"subject":"{{subject}}","departmentName":"{{departmentId}}","newsType":"{{newsTypeId}}","startDate":"{{startDate}}","endDate":"{{endDate}}","canLogin":"true","ticket":""}]""" },
             };
             using HttpRequestMessage request = ICommonClient.CreateRequest(HttpMethod.Post, GSConst.NoticeQuery, content);
-            using HttpResponseMessage response = await _client.SendAsync(cookies, request, false, token);
+            using HttpResponseMessage response = await _client.SendAsync(null, request, false, token);
             return await response.Content.ReadFromJsonAsync(AppJsonContext.Context.NoticeDtoCollection, token);
         }
         catch (Exception e)
