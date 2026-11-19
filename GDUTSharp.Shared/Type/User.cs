@@ -9,6 +9,8 @@ namespace GDUTSharp.Shared.Type
 
         public required string Password { get; set; }
 
+        public bool RememberMe { get; set; } = false;
+
         public string Captcha { get; set; } = string.Empty;
     }
 

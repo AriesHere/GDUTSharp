@@ -71,6 +71,7 @@ public class AuthService(ILogger<AuthService> logger, ICommonClient client, ISec
         formData["password"] = Convert.ToBase64String(
             _security.Encrypt(this.PrefixProcess(loginInfo.Password), pwdEncryptSalt.ToBytes(), GenIV()));
         formData["captcha"] = "";
+        formData["rememberMe"] = loginInfo.RememberMe.ToString().ToLower();
         formData["_eventId"] = "submit";
         formData["cllt"] = "userNameLogin";
         formData["dllt"] = "generalLogin";
