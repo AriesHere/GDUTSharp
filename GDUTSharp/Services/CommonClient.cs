@@ -38,33 +38,10 @@ public class CommonClient(
             bool isCookiesNotNull = cookies is not null;
             while (true)
             {
-                if (isCookiesNotNull)
-                {
-                    var cookieHeader = cookies!.GetCookieHeader(currentRequest.RequestUri!);
-                    if (!string.IsNullOrEmpty(cookieHeader))
-                    {
-                        currentRequest.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
-                    }
-                }
+                cookies?.FillCookies(currentRequest);
                 response = await client.SendAsync(currentRequest, token);
-                if (isCookiesNotNull)
-                {
-                    if (response.Headers.TryGetValues("Set-Cookie", out var setCookieValues))
-                    {
-                        foreach (var cookieValue in setCookieValues)
-                        {
-                            try
-                            {
-                                cookies!.SetCookies(currentRequest.RequestUri!, cookieValue);
-                            }
-                            catch (Exception e) when (e is CookieException or ArgumentException)
-                            {
-                                Log.IgnoreInvalidSetCookie(_logger, cookieValue, e);
-                            }
-                        }
-                    }
-                }
-                if (!IsRedirect(response.StatusCode) || response.Headers.Location is null)
+                cookies?.AddCookies(_logger, response);
+                if (!HttpHelper.IsRedirect(response.StatusCode) || response.Headers.Location is null)
                 {
                     break;
                 }
@@ -76,22 +53,16 @@ public class CommonClient(
                 }
                 var oldUri = currentRequest.RequestUri!;
                 var newUri = response.Headers.Location.IsAbsoluteUri? response.Headers.Location : new Uri(oldUri, response.Headers.Location);
-                if (Uri.Compare(oldUri, newUri, UriComponents.Host, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) != 0)
+                if (HttpHelper.IsCrossSite(oldUri, newUri))
                 {
-                    if (allowCrossDomainRedirect)
-                    {
-                        Log.CrossDomainRedirect(_logger, oldUri.AbsoluteUri, newUri.AbsoluteUri, null);
-                    }
+                    if (allowCrossDomainRedirect) Log.CrossDomainRedirect(_logger, oldUri.AbsoluteUri, newUri.AbsoluteUri, null);
                     else
                     {
                         response.Dispose();
                         throw new InvalidOperationException($"检测到跨域重定向 {oldUri.AbsoluteUri} -> {newUri.AbsoluteUri}");
                     }
                 }
-                else
-                {
-                    Log.Redirect(_logger, oldUri.AbsolutePath, newUri.AbsolutePath);
-                }
+                else Log.Redirect(_logger, oldUri.AbsolutePath, newUri.AbsolutePath);
                 var newRequest = await CreateRedirectRequest(currentRequest, newUri, response.StatusCode, token);
                 response.Dispose();
                 if (!ReferenceEquals(currentRequest, request))
@@ -107,13 +78,6 @@ public class CommonClient(
             _concurrencyLimiter.Release();
         }
     }
-
-    protected static bool IsRedirect(HttpStatusCode statusCode) =>
-        statusCode is HttpStatusCode.MovedPermanently      // 301
-            or HttpStatusCode.Redirect                     // 302
-            or HttpStatusCode.SeeOther                     // 303
-            or HttpStatusCode.TemporaryRedirect            // 307
-            or HttpStatusCode.PermanentRedirect;           // 308
 
     protected static async Task<HttpRequestMessage> CreateRedirectRequest(HttpRequestMessage previousRequest, Uri newUri, HttpStatusCode redirectStatus, CancellationToken token)
     {

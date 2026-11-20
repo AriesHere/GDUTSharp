@@ -1,8 +1,9 @@
-﻿using System.Security.Cryptography;
+﻿using GDUTSharp.Http;
 using GDUTSharp.Services;
 using GDUTSharp.Shared;
 using GDUTSharp.Shared.Type;
 using GDUTSharp.Test.TestServers;
+using System.Security.Cryptography;
 
 namespace GDUTSharp.Test
 {
@@ -35,6 +36,22 @@ namespace GDUTSharp.Test
             var cipherText = s.Encrypt(raw, key, iv);
             var result = s.Decrypt(cipherText, key, iv);
             CollectionAssert.AreEqual(raw, result);
+        }
+
+        [TestMethod]
+        [DataRow(false, "https://example.com", "https://example.com")]
+        [DataRow(false, "example.com/index", "https://example.com/index")]
+        [DataRow(false, "https://www.example.com/index", "https://example.com/index")]
+        [DataRow(false, "https://example.com/index", "https://example.com/path")]
+        [DataRow(true, "https://example.com", "https://another.com/index")]
+        [DataRow(true, "http://example.com/index", "https://another.com/")]
+        [DataRow(true, "https://example.com/index", "https://another.com/path")]
+        public void TestCrossSite(bool isCrossSite, string from, string to)
+        {
+            var fromUri = new Uri(from);
+            var toUri = new Uri(to);
+            var result = HttpHelper.IsCrossSite(fromUri, toUri);
+            Assert.AreEqual(isCrossSite, result);
         }
     }
 }
