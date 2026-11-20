@@ -51,13 +51,13 @@ public class RegisterToDI : IIncrementalGenerator
 
             namespace GDUTSharp;
 
-            static partial class Extensions
+            public static partial class Extensions
             {
                 /// <summary>将所有 GDUTSharp 服务以单例模式注册到 <see cref="IServiceCollection"/> 中</summary>
                 /// <remarks>
                 /// <see cref="CommonClient"/> 的注册方式由 <see cref="CommonClientExtensions.AddCommonClient(IServiceCollection, IConfiguration)"/> 实现
                 /// </remarks>
-                static partial IServiceCollection AddGDUTSharp(this IServiceCollection services, IConfiguration configuration)
+                public static partial IServiceCollection AddGDUTSharp(this IServiceCollection services, IConfiguration configuration)
                 {
 
             """);
