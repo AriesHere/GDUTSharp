@@ -41,15 +41,18 @@ namespace GDUTSharp.Test
         [TestMethod]
         [DataRow(false, "https://example.com", "https://example.com")]
         [DataRow(false, "example.com/index", "https://example.com/index")]
+        [DataRow(false, "/path", "https://example.com/index")]
+        [DataRow(false, "/path", "/index")]
         [DataRow(false, "https://www.example.com/index", "https://example.com/index")]
         [DataRow(false, "https://example.com/index", "https://example.com/path")]
         [DataRow(true, "https://example.com", "https://another.com/index")]
         [DataRow(true, "http://example.com/index", "https://another.com/")]
+        [DataRow(true, "https://example.com.cn/", "https://example.com/")]
         [DataRow(true, "https://example.com/index", "https://another.com/path")]
         public void TestCrossSite(bool isCrossSite, string from, string to)
         {
-            var fromUri = new Uri(from);
-            var toUri = new Uri(to);
+            var fromUri = new Uri(from, UriKind.RelativeOrAbsolute);
+            var toUri = new Uri(to, UriKind.RelativeOrAbsolute);
             var result = HttpHelper.IsCrossSite(fromUri, toUri);
             Assert.AreEqual(isCrossSite, result);
         }
