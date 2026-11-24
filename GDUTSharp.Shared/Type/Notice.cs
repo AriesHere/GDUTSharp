@@ -49,7 +49,9 @@ public partial class Notice
 
     public int ReadCount { get; set; }
 
+    /// <returns>GET 访问后会得到一个复杂的 html 页面，其实际内容嵌在 html 中。推荐的使用方式是转到浏览器访问</returns>
     public string GetNoticeUrl() => GSConst.NoticeDetail + this.Id;
 
+    /// <returns>GET 访问后会得到 JFIF 格式的文件</returns>
     public string GetImageUrl() => GSConst.NoticeBase + this.ImageUrl;
 }
